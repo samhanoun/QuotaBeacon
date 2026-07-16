@@ -1,3 +1,5 @@
 <Solution>
+  <Project Path="SessionWatcher.Core.Tests/SessionWatcher.Core.Tests.csproj" />
+  <Project Path="SessionWatcher.Core/SessionWatcher.Core.csproj" />
   <Project Path="SessionWatcher/SessionWatcher.csproj" />
 </Solution>
