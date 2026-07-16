@@ -84,6 +84,15 @@ public sealed class CodexLocalAnalyticsReaderTests : IDisposable
         Assert.Equal((decimal)outputRate, price.OutputPerMillion);
     }
 
+    [Theory]
+    [InlineData("gpt-5.5-pro")]
+    [InlineData("gpt-5.4-mini")]
+    [InlineData("unpublished-model")]
+    public void Price_catalog_does_not_apply_base_model_rates_to_other_tiers(string model)
+    {
+        Assert.Null(CodexApiPriceCatalog.Find(model));
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_codexHome))

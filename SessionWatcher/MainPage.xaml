@@ -11,20 +11,22 @@
         x:Name="Navigation"
         IsBackButtonVisible="Collapsed"
         IsSettingsVisible="True"
-        OpenPaneLength="220"
-        PaneDisplayMode="Auto"
+        CompactPaneLength="48"
+        IsPaneOpen="False"
+        OpenPaneLength="190"
+        PaneDisplayMode="LeftCompact"
         SelectionChanged="OnNavigationSelectionChanged">
         <NavigationView.MenuItems>
             <NavigationViewItem
                 x:Name="OverviewItem"
-                Content="Overview"
+                Content="Dashboard"
                 IsSelected="True"
                 Tag="overview">
                 <NavigationViewItem.Icon>
                     <SymbolIcon Symbol="Home" />
                 </NavigationViewItem.Icon>
             </NavigationViewItem>
-            <NavigationViewItem Content="History" Tag="history">
+            <NavigationViewItem Content="Trends" Tag="history">
                 <NavigationViewItem.Icon>
                     <SymbolIcon Symbol="Clock" />
                 </NavigationViewItem.Icon>

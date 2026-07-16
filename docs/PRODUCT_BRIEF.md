@@ -89,6 +89,8 @@ elapsed-window percentage, pace delta, and reset countdown.
 ## Privacy and security boundary
 
 - No prompt, response, tool-call, file-content, or source-code collection.
+- Local analytics parse only Codex model names and per-turn token counters;
+  unrelated session records are skipped before JSON parsing.
 - No telemetry and no SessionWatcher service.
 - Network allowlist in built-in providers: Anthropic usage endpoint only;
   Codex networking is delegated to the installed official app-server.

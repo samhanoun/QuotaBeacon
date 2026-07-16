@@ -5,44 +5,189 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:presentation="using:SessionWatcher.Core.Presentation"
     xmlns:viewModels="using:SessionWatcher.ViewModels"
     mc:Ignorable="d">
 
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
-        <CommandBar DefaultLabelPosition="Right">
-            <AppBarButton Click="OnReloadClicked" Icon="Refresh" Label="Reload history" />
-        </CommandBar>
-        <Grid Grid.Row="1" MaxWidth="1040" Padding="32,16,32,32" HorizontalAlignment="Stretch">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
-            </Grid.RowDefinitions>
-            <StackPanel Margin="0,0,0,16" Spacing="4">
-                <TextBlock Style="{StaticResource PageTitleTextStyle}" Text="Usage history" />
-                <TextBlock
-                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                    Text="Sanitized quota snapshots are kept locally for up to 90 days."
-                    TextWrapping="Wrap" />
-            </StackPanel>
-            <ListView Grid.Row="1" ItemsSource="{x:Bind ViewModel.History, Mode=OneWay}">
-                <ListView.ItemTemplate>
-                    <DataTemplate x:DataType="viewModels:HistoryRowModel">
-                        <StackPanel Padding="8,12" Spacing="3">
-                            <TextBlock FontWeight="SemiBold" Text="{x:Bind ProviderName}" />
-                            <TextBlock Text="{x:Bind Summary}" TextWrapping="Wrap" />
-                            <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}">
-                                <Run Text="{x:Bind ObservedText}" />
-                                <Run Text=" · " />
-                                <Run Text="{x:Bind SourceText}" />
-                            </TextBlock>
+    <Grid Background="{ThemeResource DashboardPageBrush}">
+        <ScrollViewer>
+            <Grid MaxWidth="1280" Padding="28,24,28,40" HorizontalAlignment="Stretch">
+                <StackPanel Spacing="20">
+                    <Grid ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Spacing="4">
+                            <TextBlock Style="{StaticResource EyebrowTextStyle}" Text="ANALYTICS" />
+                            <TextBlock Style="{StaticResource PageTitleTextStyle}" Text="Trends &amp; history" />
+                            <TextBlock
+                                Foreground="{ThemeResource DashboardMutedTextBrush}"
+                                Text="Local activity trends and sanitized provider snapshots." />
                         </StackPanel>
-                    </DataTemplate>
-                </ListView.ItemTemplate>
-            </ListView>
-        </Grid>
+                        <Button
+                            Grid.Column="1"
+                            AutomationProperties.Name="Reload usage history"
+                            Click="OnReloadClicked"
+                            VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal" Spacing="7">
+                                <SymbolIcon Symbol="Refresh" />
+                                <TextBlock Text="Reload" />
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+
+                    <Grid ColumnSpacing="10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Border Style="{StaticResource DashboardCardStyle}">
+                            <StackPanel Spacing="4">
+                                <TextBlock Style="{StaticResource EyebrowTextStyle}" Text="30-DAY TOKENS" />
+                                <TextBlock Style="{StaticResource MetricValueTextStyle}" Text="{x:Bind ViewModel.Analytics.ThirtyDayTokensText, Mode=OneWay}" />
+                            </StackPanel>
+                        </Border>
+                        <Border Grid.Column="1" Style="{StaticResource DashboardCardStyle}">
+                            <StackPanel Spacing="4">
+                                <TextBlock Style="{StaticResource EyebrowTextStyle}" Text="ESTIMATED COST" />
+                                <TextBlock Style="{StaticResource MetricValueTextStyle}" Text="{x:Bind ViewModel.Analytics.EstimatedCostText, Mode=OneWay}" />
+                            </StackPanel>
+                        </Border>
+                        <Border Grid.Column="2" Style="{StaticResource DashboardCardStyle}">
+                            <StackPanel Spacing="4">
+                                <TextBlock Style="{StaticResource EyebrowTextStyle}" Text="SESSIONS" />
+                                <TextBlock Style="{StaticResource MetricValueTextStyle}" Text="{x:Bind ViewModel.Analytics.SessionCountText, Mode=OneWay}" />
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+
+                    <Border Style="{StaticResource DashboardCardStyle}">
+                        <StackPanel Spacing="14">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Spacing="2">
+                                    <TextBlock FontWeight="SemiBold" Text="Recent token activity" />
+                                    <TextBlock
+                                        FontSize="11"
+                                        Foreground="{ThemeResource DashboardMutedTextBrush}"
+                                        Text="Daily local activity; hover a bar for exact totals" />
+                                </StackPanel>
+                                <TextBlock
+                                    Grid.Column="1"
+                                    Foreground="{ThemeResource DashboardAccentBrush}"
+                                    Text="{x:Bind ViewModel.Analytics.ActiveDaysText, Mode=OneWay}"
+                                    VerticalAlignment="Center" />
+                            </Grid>
+                            <ItemsControl ItemsSource="{x:Bind ViewModel.Analytics.Activity, Mode=OneWay}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <ItemsStackPanel Orientation="Horizontal" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="presentation:ActivityBarModel">
+                                        <Grid Width="42" Height="118" Margin="0,0,8,0" ToolTipService.ToolTip="{x:Bind AccessibleSummary}">
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="*" />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
+                                            <Border
+                                                Width="24"
+                                                Height="{x:Bind BarHeight}"
+                                                AutomationProperties.Name="{x:Bind AccessibleSummary}"
+                                                Background="{ThemeResource DashboardAccentBrush}"
+                                                CornerRadius="5,5,1,1"
+                                                VerticalAlignment="Bottom" />
+                                            <TextBlock
+                                                Grid.Row="1"
+                                                Margin="0,6,0,0"
+                                                HorizontalAlignment="Center"
+                                                FontSize="10"
+                                                Foreground="{ThemeResource DashboardMutedTextBrush}"
+                                                Text="{x:Bind DayLabel}" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+
+                    <StackPanel Spacing="10">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Style="{StaticResource SectionTitleTextStyle}" Text="Quota snapshots" />
+                            <Border Grid.Column="1" Style="{StaticResource PillBorderStyle}">
+                                <TextBlock
+                                    FontSize="11"
+                                    Foreground="{ThemeResource DashboardMutedTextBrush}"
+                                    Text="SANITIZED · 90 DAYS" />
+                            </Border>
+                        </Grid>
+                        <ListView
+                            BorderThickness="0"
+                            IsItemClickEnabled="False"
+                            ItemsSource="{x:Bind ViewModel.History, Mode=OneWay}"
+                            SelectionMode="None">
+                            <ListView.ItemContainerStyle>
+                                <Style TargetType="ListViewItem">
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                    <Setter Property="Padding" Value="0" />
+                                    <Setter Property="Margin" Value="0,0,0,8" />
+                                </Style>
+                            </ListView.ItemContainerStyle>
+                            <ListView.ItemTemplate>
+                                <DataTemplate x:DataType="viewModels:HistoryRowModel">
+                                    <Border Style="{StaticResource DashboardCardStyle}">
+                                        <Grid ColumnSpacing="12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <Border
+                                                Width="34"
+                                                Height="34"
+                                                Background="{ThemeResource DashboardAccentSoftBrush}"
+                                                CornerRadius="8">
+                                                <TextBlock
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center"
+                                                    Foreground="{ThemeResource DashboardAccentBrush}"
+                                                    Text="◆" />
+                                            </Border>
+                                            <StackPanel Grid.Column="1" Spacing="2">
+                                                <TextBlock FontWeight="SemiBold" Text="{x:Bind ProviderName}" />
+                                                <TextBlock Text="{x:Bind Summary}" TextWrapping="Wrap" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="2" HorizontalAlignment="Right" Spacing="3">
+                                                <TextBlock FontSize="11" Text="{x:Bind ObservedText}" />
+                                                <TextBlock
+                                                    HorizontalAlignment="Right"
+                                                    FontSize="11"
+                                                    Foreground="{ThemeResource DashboardMutedTextBrush}"
+                                                    Text="{x:Bind SourceText}" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                    </StackPanel>
+                    <TextBlock
+                        FontSize="11"
+                        Foreground="{ThemeResource DashboardMutedTextBrush}"
+                        Text="{x:Bind ViewModel.Analytics.CostDisclaimer, Mode=OneWay}"
+                        TextWrapping="Wrap" />
+                </StackPanel>
+            </Grid>
+        </ScrollViewer>
     </Grid>
 </Page>

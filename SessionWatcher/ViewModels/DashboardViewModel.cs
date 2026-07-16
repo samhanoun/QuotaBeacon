@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using SessionWatcher.Core.Alerts;
+using SessionWatcher.Core.Analytics;
 using SessionWatcher.Core.Models;
 using SessionWatcher.Core.Presentation;
 using SessionWatcher.Services;
@@ -29,6 +30,8 @@ public sealed class DashboardViewModel(AppRuntime runtime) : INotifyPropertyChan
     private bool _isRefreshing;
     private string _statusText = "Waiting for the first refresh";
     private bool _hasNoProviders = true;
+    private bool _hasLocalAnalytics;
+    private AnalyticsSummaryModel _analytics = AnalyticsSummaryModel.Empty;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -56,6 +59,18 @@ public sealed class DashboardViewModel(AppRuntime runtime) : INotifyPropertyChan
         private set => SetField(ref _hasNoProviders, value);
     }
 
+    public bool HasLocalAnalytics
+    {
+        get => _hasLocalAnalytics;
+        private set => SetField(ref _hasLocalAnalytics, value);
+    }
+
+    public AnalyticsSummaryModel Analytics
+    {
+        get => _analytics;
+        private set => SetField(ref _analytics, value);
+    }
+
     public async Task RefreshAsync(CancellationToken cancellationToken)
     {
         if (!await _refreshGate.WaitAsync(0, cancellationToken))
@@ -67,7 +82,10 @@ public sealed class DashboardViewModel(AppRuntime runtime) : INotifyPropertyChan
         {
             IsRefreshing = true;
             StatusText = "Refreshing provider usage…";
-            var snapshots = await runtime.Coordinator.RefreshAsync(cancellationToken);
+            var providerTask = runtime.Coordinator.RefreshAsync(cancellationToken);
+            var analyticsTask = ReadAnalyticsSafelyAsync(cancellationToken);
+            var snapshots = await providerTask;
+            var localAnalytics = await analyticsTask;
             var now = DateTimeOffset.UtcNow;
 
             Providers.Clear();
@@ -77,6 +95,11 @@ public sealed class DashboardViewModel(AppRuntime runtime) : INotifyPropertyChan
             }
 
             HasNoProviders = Providers.Count == 0;
+            if (localAnalytics is not null)
+            {
+                Analytics = AnalyticsProjector.Project(localAnalytics);
+                HasLocalAnalytics = localAnalytics.Last30Days.TotalTokens > 0;
+            }
             var available = snapshots.Count(snapshot => snapshot.Status == SnapshotStatus.Available);
             StatusText = available == 0
                 ? "No live usage is available yet"
@@ -89,6 +112,25 @@ public sealed class DashboardViewModel(AppRuntime runtime) : INotifyPropertyChan
         {
             IsRefreshing = false;
             _refreshGate.Release();
+        }
+    }
+
+    private async Task<CodexLocalAnalyticsSnapshot?> ReadAnalyticsSafelyAsync(
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await Task.Run(
+                () => runtime.LocalAnalytics.ReadAsync(cancellationToken),
+                cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch
+        {
+            return null;
         }
     }
 

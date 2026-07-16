@@ -7,10 +7,12 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
+    <Grid Background="{ThemeResource DashboardPageBrush}">
     <ScrollViewer>
-        <Grid MaxWidth="820" Padding="32" HorizontalAlignment="Stretch">
+        <Grid MaxWidth="820" Padding="28,24,28,40" HorizontalAlignment="Stretch">
             <StackPanel Spacing="22">
                 <StackPanel Spacing="4">
+                    <TextBlock Style="{StaticResource EyebrowTextStyle}" Text="PREFERENCES" />
                     <TextBlock Style="{StaticResource PageTitleTextStyle}" Text="Settings" />
                     <TextBlock
                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
@@ -18,7 +20,8 @@
                         TextWrapping="Wrap" />
                 </StackPanel>
 
-                <StackPanel Spacing="20">
+                <Border Style="{StaticResource DashboardCardStyle}">
+                <StackPanel Spacing="24">
                     <StackPanel Spacing="8">
                         <TextBlock FontWeight="SemiBold" Text="Refresh interval" />
                         <TextBlock
@@ -59,6 +62,7 @@
                             AutomationProperties.Name="Keep SessionWatcher running in the tray" />
                     </StackPanel>
                 </StackPanel>
+                </Border>
 
                 <InfoBar x:Name="SaveStatus" IsClosable="True" IsOpen="False" />
                 <Button
@@ -69,4 +73,5 @@
             </StackPanel>
         </Grid>
     </ScrollViewer>
+    </Grid>
 </Page>

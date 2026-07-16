@@ -24,7 +24,8 @@ The app keeps two kinds of numbers deliberately separate:
 
 See [docs/PRODUCT_BRIEF.md](docs/PRODUCT_BRIEF.md) for the researched feature
 scope, alternatives, and provider contract. See [docs/PLUGINS.md](docs/PLUGINS.md)
-for the external provider API and its trust boundary.
+for the external provider API and its trust boundary, and
+[docs/ANALYTICS.md](docs/ANALYTICS.md) for local metric definitions.
 
 ## Status
 
@@ -32,8 +33,11 @@ The first working native prototype includes:
 
 - a responsive WinUI 3 dashboard for Claude Code and OpenAI Codex;
 - provider-reported windows, reset countdowns, remaining quota, and pace;
+- privacy-safe daily and 30-day tokens, sessions, cache rate, model share,
+  activity charts, and API-equivalent cost estimates from local Codex metadata;
 - an explicit Codex local-session fallback when app-server versions drift;
-- sanitized 90-day local history, threshold alerts, and a Windows tray icon;
+- a dedicated Trends view, sanitized 90-day quota history, threshold alerts,
+  and a Windows tray icon;
 - configurable refresh/startup/minimize-to-tray behavior;
 - trusted external provider DLL discovery with duplicate/error isolation.
 

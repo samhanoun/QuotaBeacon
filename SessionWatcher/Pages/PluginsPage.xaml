@@ -7,10 +7,12 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
+    <Grid Background="{ThemeResource DashboardPageBrush}">
     <ScrollViewer>
-        <Grid MaxWidth="1040" Padding="32" HorizontalAlignment="Stretch">
+        <Grid MaxWidth="1040" Padding="28,24,28,40" HorizontalAlignment="Stretch">
             <StackPanel Spacing="18">
                 <StackPanel Spacing="4">
+                    <TextBlock Style="{StaticResource EyebrowTextStyle}" Text="EXTENSIBILITY" />
                     <TextBlock Style="{StaticResource PageTitleTextStyle}" Text="Plugins" />
                     <TextBlock
                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
@@ -25,6 +27,7 @@
                     Severity="Warning"
                     Title="Trust boundary" />
 
+                <Border Style="{StaticResource DashboardCardStyle}">
                 <StackPanel Spacing="8">
                     <TextBlock Style="{StaticResource SectionTitleTextStyle}" Text="Plugin folder" />
                     <TextBlock IsTextSelectionEnabled="True" Text="{x:Bind PluginDirectory}" TextWrapping="Wrap" />
@@ -38,11 +41,14 @@
                         Text="Restart SessionWatcher after adding or removing a plugin."
                         TextWrapping="Wrap" />
                 </StackPanel>
+                </Border>
 
+                <Border Style="{StaticResource DashboardCardStyle}">
                 <StackPanel Spacing="8">
                     <TextBlock Style="{StaticResource SectionTitleTextStyle}" Text="Registered providers" />
                     <TextBlock Text="{x:Bind ProviderSummary}" TextWrapping="Wrap" />
                 </StackPanel>
+                </Border>
 
                 <InfoBar
                     IsClosable="False"
@@ -51,11 +57,14 @@
                     Severity="Error"
                     Title="Some plugins were not loaded" />
 
+                <Border Style="{StaticResource DashboardCardStyle}">
                 <StackPanel Spacing="8">
                     <TextBlock Style="{StaticResource SectionTitleTextStyle}" Text="External plugins" />
                     <TextBlock Text="{x:Bind ExternalPluginSummary}" TextWrapping="Wrap" />
                 </StackPanel>
+                </Border>
             </StackPanel>
         </Grid>
     </ScrollViewer>
+    </Grid>
 </Page>

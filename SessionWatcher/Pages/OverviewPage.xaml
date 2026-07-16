@@ -8,36 +8,48 @@
     xmlns:presentation="using:SessionWatcher.Core.Presentation"
     mc:Ignorable="d">
 
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
-
-        <CommandBar DefaultLabelPosition="Right">
-            <AppBarButton
-                AutomationProperties.Name="Refresh provider usage"
-                Click="OnRefreshClicked"
-                Icon="Refresh"
-                Label="Refresh" />
-        </CommandBar>
-
-        <ScrollViewer Grid.Row="1">
+    <Grid Background="{ThemeResource DashboardPageBrush}">
+        <ScrollViewer>
             <Grid
-                MaxWidth="1040"
-                Padding="32,16,32,32"
+                MaxWidth="1280"
+                Padding="28,24,28,40"
                 HorizontalAlignment="Stretch">
-                <StackPanel Spacing="16">
-                    <StackPanel Spacing="4">
-                        <TextBlock Style="{StaticResource PageTitleTextStyle}" Text="Usage overview" />
-                        <TextBlock
-                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                            Text="Provider-reported quota windows stay separate from local fallback data."
-                            TextWrapping="Wrap" />
-                        <TextBlock
-                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                            Text="{x:Bind ViewModel.StatusText, Mode=OneWay}" />
-                    </StackPanel>
+                <StackPanel Spacing="20">
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Spacing="4">
+                            <TextBlock Style="{StaticResource EyebrowTextStyle}" Text="COMMAND CENTER" />
+                            <TextBlock Style="{StaticResource PageTitleTextStyle}" Text="Usage intelligence" />
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <TextBlock
+                                    Foreground="{ThemeResource DashboardMutedTextBrush}"
+                                    Text="{x:Bind ViewModel.StatusText, Mode=OneWay}" />
+                                <Border Style="{StaticResource PillBorderStyle}">
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <Ellipse
+                                            Width="7"
+                                            Height="7"
+                                            Fill="{ThemeResource DashboardSuccessBrush}" />
+                                        <TextBlock FontSize="11" Text="LOCAL-FIRST" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </StackPanel>
+                        <Button
+                            Grid.Column="1"
+                            AutomationProperties.Name="Refresh provider usage"
+                            Click="OnRefreshClicked"
+                            Style="{StaticResource AccentButtonStyle}"
+                            VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <SymbolIcon Symbol="Refresh" />
+                                <TextBlock Text="Refresh" />
+                            </StackPanel>
+                        </Button>
+                    </Grid>
 
                     <ProgressBar
                         AutomationProperties.Name="Refreshing provider usage"
@@ -45,95 +57,374 @@
                         ShowError="False"
                         Visibility="{x:Bind ViewModel.IsRefreshing, Mode=OneWay}" />
 
-                    <InfoBar
-                        IsClosable="False"
-                        IsOpen="{x:Bind ViewModel.HasNoProviders, Mode=OneWay}"
-                        Message="No providers are registered. Check the Plugins page."
-                        Severity="Informational"
-                        Title="Nothing to show" />
+                    <StackPanel Spacing="10">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Style="{StaticResource SectionTitleTextStyle}" Text="Quota windows" />
+                                <Border Style="{StaticResource PillBorderStyle}">
+                                    <TextBlock
+                                        FontSize="11"
+                                        Foreground="{ThemeResource DashboardMutedTextBrush}"
+                                        Text="PROVIDER REPORTED" />
+                                </Border>
+                            </StackPanel>
+                            <TextBlock
+                                Grid.Column="1"
+                                Foreground="{ThemeResource DashboardMutedTextBrush}"
+                                Text="Actual usage vs elapsed budget"
+                                VerticalAlignment="Center" />
+                        </Grid>
 
-                    <ItemsControl ItemsSource="{x:Bind ViewModel.Providers, Mode=OneWay}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate x:DataType="presentation:ProviderCardModel">
-                                <Border
-                                    Margin="0,0,0,12"
-                                    Style="{StaticResource ProviderCardStyle}">
-                                    <StackPanel Spacing="14">
-                                        <Grid ColumnSpacing="12">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="Auto" />
-                                            </Grid.ColumnDefinitions>
-                                            <StackPanel Spacing="2">
-                                                <TextBlock
-                                                    Style="{StaticResource SectionTitleTextStyle}"
-                                                    Text="{x:Bind ProviderName}" />
-                                                <TextBlock
-                                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                                    Text="{x:Bind FreshnessText}" />
-                                            </StackPanel>
+                        <InfoBar
+                            IsClosable="False"
+                            IsOpen="{x:Bind ViewModel.HasNoProviders, Mode=OneWay}"
+                            Message="No providers are registered. Check the Plugins page."
+                            Severity="Informational"
+                            Title="Nothing to show" />
+
+                        <ItemsControl ItemsSource="{x:Bind ViewModel.Providers, Mode=OneWay}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="presentation:ProviderCardModel">
+                                    <Border
+                                        Margin="0,0,0,10"
+                                        Style="{StaticResource ProviderCardStyle}">
+                                        <StackPanel Spacing="12">
+                                            <Grid ColumnSpacing="12">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                                    <Border
+                                                        Width="34"
+                                                        Height="34"
+                                                        Background="{ThemeResource DashboardAccentSoftBrush}"
+                                                        CornerRadius="8">
+                                                        <TextBlock
+                                                            HorizontalAlignment="Center"
+                                                            VerticalAlignment="Center"
+                                                            FontSize="15"
+                                                            FontWeight="Bold"
+                                                            Foreground="{ThemeResource DashboardAccentBrush}"
+                                                            Text="◆" />
+                                                    </Border>
+                                                    <StackPanel Spacing="1">
+                                                        <TextBlock
+                                                            FontSize="16"
+                                                            FontWeight="SemiBold"
+                                                            Text="{x:Bind ProviderName}" />
+                                                        <TextBlock
+                                                            FontSize="12"
+                                                            Foreground="{ThemeResource DashboardMutedTextBrush}"
+                                                            Text="{x:Bind FreshnessText}" />
+                                                    </StackPanel>
+                                                </StackPanel>
+                                                <Border Grid.Column="1" Style="{StaticResource PillBorderStyle}">
+                                                    <TextBlock FontSize="11" Text="{x:Bind PlanText}" />
+                                                </Border>
+                                            </Grid>
+
+                                            <Border
+                                                Padding="10,7"
+                                                Background="{ThemeResource DashboardWarningSoftBrush}"
+                                                CornerRadius="7"
+                                                Visibility="{x:Bind HasDiagnostic}">
+                                                <Grid ColumnSpacing="8">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <FontIcon
+                                                        FontSize="12"
+                                                        Foreground="{ThemeResource DashboardWarningBrush}"
+                                                        Glyph="&#xE7BA;" />
+                                                    <TextBlock
+                                                        Grid.Column="1"
+                                                        FontSize="12"
+                                                        Foreground="{ThemeResource DashboardWarningBrush}"
+                                                        MaxLines="2"
+                                                        Text="{x:Bind Diagnostic}"
+                                                        TextTrimming="CharacterEllipsis"
+                                                        TextWrapping="Wrap" />
+                                                </Grid>
+                                            </Border>
+
+                                            <ItemsControl ItemsSource="{x:Bind Quotas}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate x:DataType="presentation:QuotaCardModel">
+                                                        <Grid Padding="0,4,0,3" RowSpacing="7">
+                                                            <Grid.RowDefinitions>
+                                                                <RowDefinition Height="Auto" />
+                                                                <RowDefinition Height="Auto" />
+                                                                <RowDefinition Height="Auto" />
+                                                                <RowDefinition Height="Auto" />
+                                                            </Grid.RowDefinitions>
+                                                            <Grid ColumnSpacing="12">
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="*" />
+                                                                    <ColumnDefinition Width="Auto" />
+                                                                </Grid.ColumnDefinitions>
+                                                                <StackPanel Orientation="Horizontal" Spacing="9">
+                                                                    <TextBlock FontWeight="SemiBold" Text="{x:Bind Label}" />
+                                                                    <TextBlock
+                                                                        FontSize="12"
+                                                                        Foreground="{ThemeResource DashboardMutedTextBrush}"
+                                                                        Text="{x:Bind ResetText}" />
+                                                                </StackPanel>
+                                                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                                                                    <TextBlock FontWeight="SemiBold" Text="{x:Bind UsedText}" />
+                                                                    <TextBlock
+                                                                        Foreground="{ThemeResource DashboardMutedTextBrush}"
+                                                                        Text="{x:Bind RemainingText}" />
+                                                                </StackPanel>
+                                                            </Grid>
+                                                            <ProgressBar
+                                                                Grid.Row="1"
+                                                                Height="6"
+                                                                AutomationProperties.Name="{x:Bind AccessibleSummary}"
+                                                                Foreground="{ThemeResource DashboardAccentBrush}"
+                                                                Maximum="100"
+                                                                Value="{x:Bind UsedPercent}" />
+                                                            <Grid Grid.Row="2" ColumnSpacing="12">
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="*" />
+                                                                    <ColumnDefinition Width="Auto" />
+                                                                </Grid.ColumnDefinitions>
+                                                                <TextBlock
+                                                                    FontSize="11"
+                                                                    Foreground="{ThemeResource DashboardMutedTextBrush}"
+                                                                    Text="{x:Bind BudgetText}" />
+                                                                <TextBlock
+                                                                    Grid.Column="1"
+                                                                    FontSize="11"
+                                                                    Foreground="{ThemeResource DashboardMutedTextBrush}"
+                                                                    Text="{x:Bind PaceDeltaText}" />
+                                                            </Grid>
+                                                            <ProgressBar
+                                                                Grid.Row="3"
+                                                                Height="2"
+                                                                Foreground="{ThemeResource DashboardWarningBrush}"
+                                                                Maximum="100"
+                                                                Value="{x:Bind ExpectedPercent}" />
+                                                        </Grid>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+
+                    <StackPanel Spacing="10">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Style="{StaticResource SectionTitleTextStyle}" Text="Local analytics" />
+                                <Border Style="{StaticResource PillBorderStyle}">
+                                    <TextBlock
+                                        FontSize="11"
+                                        Foreground="{ThemeResource DashboardSuccessBrush}"
+                                        Text="CONTENT-FREE METADATA" />
+                                </Border>
+                            </StackPanel>
+                            <TextBlock
+                                Grid.Column="1"
+                                Foreground="{ThemeResource DashboardMutedTextBrush}"
+                                Text="Rolling 30 days"
+                                VerticalAlignment="Center" />
+                        </Grid>
+
+                        <Grid x:Name="MetricsGrid" ColumnSpacing="10" RowSpacing="10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <Border x:Name="TodayMetric" Grid.ColumnSpan="2" Style="{StaticResource DashboardCardStyle}">
+                                <StackPanel Spacing="5">
+                                    <TextBlock Style="{StaticResource EyebrowTextStyle}" Text="TODAY TOKENS" />
+                                    <TextBlock Style="{StaticResource MetricValueTextStyle}" Text="{x:Bind ViewModel.Analytics.TodayTokensText, Mode=OneWay}" />
+                                    <TextBlock
+                                        FontSize="11"
+                                        Foreground="{ThemeResource DashboardMutedTextBrush}">
+                                        <Run Text="Output " />
+                                        <Run Text="{x:Bind ViewModel.Analytics.OutputTokensText, Mode=OneWay}" />
+                                        <Run Text="  ·  Reasoning " />
+                                        <Run Text="{x:Bind ViewModel.Analytics.ReasoningTokensText, Mode=OneWay}" />
+                                    </TextBlock>
+                                </StackPanel>
+                            </Border>
+                            <Border x:Name="MonthMetric" Grid.Column="2" Grid.ColumnSpan="2" Style="{StaticResource DashboardCardStyle}">
+                                <StackPanel Spacing="5">
+                                    <TextBlock Style="{StaticResource EyebrowTextStyle}" Text="30-DAY TOKENS" />
+                                    <TextBlock Style="{StaticResource MetricValueTextStyle}" Text="{x:Bind ViewModel.Analytics.ThirtyDayTokensText, Mode=OneWay}" />
+                                    <TextBlock
+                                        FontSize="11"
+                                        Foreground="{ThemeResource DashboardMutedTextBrush}">
+                                        <Run Text="{x:Bind ViewModel.Analytics.SessionCountText, Mode=OneWay}" />
+                                        <Run Text=" sessions  ·  " />
+                                        <Run Text="{x:Bind ViewModel.Analytics.ActiveDaysText, Mode=OneWay}" />
+                                    </TextBlock>
+                                </StackPanel>
+                            </Border>
+                            <Border x:Name="CostMetric" Grid.Row="1" Grid.ColumnSpan="2" Style="{StaticResource DashboardCardStyle}">
+                                <StackPanel Spacing="5">
+                                    <TextBlock Style="{StaticResource EyebrowTextStyle}" Text="API-EQUIVALENT COST" />
+                                    <TextBlock Style="{StaticResource MetricValueTextStyle}" Text="{x:Bind ViewModel.Analytics.EstimatedCostText, Mode=OneWay}" />
+                                    <TextBlock
+                                        FontSize="11"
+                                        Foreground="{ThemeResource DashboardMutedTextBrush}">
+                                        <Run Text="Today " />
+                                        <Run Text="{x:Bind ViewModel.Analytics.TodayCostText, Mode=OneWay}" />
+                                        <Run Text="  ·  local estimate" />
+                                    </TextBlock>
+                                </StackPanel>
+                            </Border>
+                            <Border x:Name="CacheMetric" Grid.Row="1" Grid.Column="2" Grid.ColumnSpan="2" Style="{StaticResource DashboardCardStyle}">
+                                <StackPanel Spacing="5">
+                                    <TextBlock Style="{StaticResource EyebrowTextStyle}" Text="TODAY CACHE RATE" />
+                                    <TextBlock Style="{StaticResource MetricValueTextStyle}" Text="{x:Bind ViewModel.Analytics.CacheRateText, Mode=OneWay}" />
+                                    <TextBlock
+                                        FontSize="11"
+                                        Foreground="{ThemeResource DashboardMutedTextBrush}">
+                                        <Run Text="Top model  ·  " />
+                                        <Run Text="{x:Bind ViewModel.Analytics.TopModelText, Mode=OneWay}" />
+                                    </TextBlock>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <Grid x:Name="AnalyticsGrid" ColumnSpacing="10" RowSpacing="10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="3*" />
+                                <ColumnDefinition Width="2*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <Border x:Name="ActivityCard" Grid.ColumnSpan="2" Style="{StaticResource DashboardCardStyle}">
+                                <StackPanel Spacing="14">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Spacing="2">
+                                            <TextBlock FontWeight="SemiBold" Text="Token activity" />
                                             <TextBlock
-                                                Grid.Column="1"
-                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                                Text="{x:Bind PlanText}"
-                                                VerticalAlignment="Center" />
-                                        </Grid>
-
-                                        <InfoBar
-                                            IsClosable="False"
-                                            IsOpen="{x:Bind HasDiagnostic}"
-                                            Message="{x:Bind Diagnostic}"
-                                            Severity="Warning" />
-
-                                        <ItemsControl ItemsSource="{x:Bind Quotas}">
+                                                FontSize="11"
+                                                Foreground="{ThemeResource DashboardMutedTextBrush}"
+                                                Text="Last 14 days from local Codex session metadata" />
+                                        </StackPanel>
+                                        <TextBlock
+                                            Grid.Column="1"
+                                            Foreground="{ThemeResource DashboardAccentBrush}"
+                                            Text="{x:Bind ViewModel.Analytics.ThirtyDayTokensText, Mode=OneWay}"
+                                            VerticalAlignment="Center" />
+                                    </Grid>
+                                    <ScrollViewer
+                                        HorizontalScrollBarVisibility="Hidden"
+                                        HorizontalScrollMode="Enabled"
+                                        VerticalScrollMode="Disabled">
+                                        <ItemsControl ItemsSource="{x:Bind ViewModel.Analytics.Activity, Mode=OneWay}">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <ItemsStackPanel Orientation="Horizontal" />
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
                                             <ItemsControl.ItemTemplate>
-                                                <DataTemplate x:DataType="presentation:QuotaCardModel">
-                                                    <Grid Padding="0,10,0,12" RowSpacing="8">
+                                                <DataTemplate x:DataType="presentation:ActivityBarModel">
+                                                    <Grid Width="30" Height="108" Margin="0,0,8,0" ToolTipService.ToolTip="{x:Bind AccessibleSummary}">
                                                         <Grid.RowDefinitions>
-                                                            <RowDefinition Height="Auto" />
-                                                            <RowDefinition Height="Auto" />
+                                                            <RowDefinition Height="*" />
                                                             <RowDefinition Height="Auto" />
                                                         </Grid.RowDefinitions>
-                                                        <Grid ColumnSpacing="12">
-                                                            <Grid.ColumnDefinitions>
-                                                                <ColumnDefinition Width="*" />
-                                                                <ColumnDefinition Width="Auto" />
-                                                            </Grid.ColumnDefinitions>
-                                                            <TextBlock FontWeight="SemiBold" Text="{x:Bind Label}" />
-                                                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
-                                                                <TextBlock Text="{x:Bind UsedText}" />
-                                                                <TextBlock
-                                                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                                                    Text="{x:Bind RemainingText}" />
-                                                            </StackPanel>
-                                                        </Grid>
-                                                        <ProgressBar
-                                                            Grid.Row="1"
+                                                        <Border
+                                                            Width="16"
+                                                            Height="{x:Bind BarHeight}"
                                                             AutomationProperties.Name="{x:Bind AccessibleSummary}"
-                                                            Maximum="100"
-                                                            Value="{x:Bind UsedPercent}" />
-                                                        <Grid Grid.Row="2" ColumnSpacing="12">
-                                                            <Grid.ColumnDefinitions>
-                                                                <ColumnDefinition Width="*" />
-                                                                <ColumnDefinition Width="Auto" />
-                                                            </Grid.ColumnDefinitions>
-                                                            <TextBlock
-                                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                                                Text="{x:Bind ResetText}" />
-                                                            <TextBlock
-                                                                Grid.Column="1"
-                                                                FontWeight="SemiBold"
-                                                                Text="{x:Bind PaceText}" />
-                                                        </Grid>
+                                                            Background="{ThemeResource DashboardAccentBrush}"
+                                                            CornerRadius="4,4,1,1"
+                                                            VerticalAlignment="Bottom" />
+                                                        <TextBlock
+                                                            Grid.Row="1"
+                                                            Margin="0,6,0,0"
+                                                            HorizontalAlignment="Center"
+                                                            FontSize="9"
+                                                            Foreground="{ThemeResource DashboardMutedTextBrush}"
+                                                            Text="{x:Bind DayLabel}" />
                                                     </Grid>
                                                 </DataTemplate>
                                             </ItemsControl.ItemTemplate>
                                         </ItemsControl>
+                                    </ScrollViewer>
+                                </StackPanel>
+                            </Border>
+
+                            <Border x:Name="ModelsCard" Grid.Row="1" Grid.ColumnSpan="2" Style="{StaticResource DashboardCardStyle}">
+                                <StackPanel Spacing="12">
+                                    <StackPanel Spacing="2">
+                                        <TextBlock FontWeight="SemiBold" Text="Model mix" />
+                                        <TextBlock
+                                            FontSize="11"
+                                            Foreground="{ThemeResource DashboardMutedTextBrush}"
+                                            Text="Share of 30-day local token activity" />
                                     </StackPanel>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+                                    <ItemsControl ItemsSource="{x:Bind ViewModel.Analytics.Models, Mode=OneWay}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="presentation:ModelShareModel">
+                                                <StackPanel Margin="0,0,0,8" Spacing="5">
+                                                    <Grid ColumnSpacing="10">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock FontSize="12" FontWeight="SemiBold" Text="{x:Bind Model}" />
+                                                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                                                            <TextBlock FontSize="11" Text="{x:Bind TokensText}" />
+                                                            <TextBlock
+                                                                FontSize="11"
+                                                                Foreground="{ThemeResource DashboardMutedTextBrush}"
+                                                                Text="{x:Bind CostText}" />
+                                                        </StackPanel>
+                                                    </Grid>
+                                                    <ProgressBar
+                                                        Height="4"
+                                                        AutomationProperties.Name="{x:Bind AccessibleSummary}"
+                                                        Foreground="{ThemeResource DashboardAccentBrush}"
+                                                        Maximum="100"
+                                                        Value="{x:Bind SharePercent}" />
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <TextBlock
+                            FontSize="11"
+                            Foreground="{ThemeResource DashboardMutedTextBrush}"
+                            Text="{x:Bind ViewModel.Analytics.CostDisclaimer, Mode=OneWay}"
+                            TextWrapping="Wrap" />
+                    </StackPanel>
                 </StackPanel>
             </Grid>
         </ScrollViewer>

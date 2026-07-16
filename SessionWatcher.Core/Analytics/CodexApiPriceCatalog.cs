@@ -31,7 +31,8 @@ public static class CodexApiPriceCatalog
         }
 
         return Prices.FirstOrDefault(entry =>
-                model.StartsWith(entry.Prefix, StringComparison.OrdinalIgnoreCase))
+                string.Equals(model, entry.Prefix, StringComparison.OrdinalIgnoreCase) ||
+                model.StartsWith($"{entry.Prefix}-20", StringComparison.OrdinalIgnoreCase))
             .Price;
     }
 

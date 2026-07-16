@@ -42,7 +42,11 @@ try {
     }
 
     $requiredNames = @(
-        "Usage overview",
+        "Usage intelligence",
+        "Quota windows",
+        "Local analytics",
+        "TODAY TOKENS",
+        "Token activity",
         "Claude",
         "Codex",
         "Refresh provider usage")

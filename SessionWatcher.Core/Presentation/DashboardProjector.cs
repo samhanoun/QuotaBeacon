@@ -12,6 +12,9 @@ public sealed record QuotaCardModel(
     string RemainingText,
     string ResetText,
     string PaceText,
+    double ExpectedPercent,
+    string BudgetText,
+    string PaceDeltaText,
     PaceState PaceState,
     string AccessibleSummary);
 
@@ -66,6 +69,16 @@ public static class DashboardProjector
             PaceState.Exhausted => "Limit reached",
             _ => "Pace unavailable"
         };
+        var expected = pace.ElapsedPercent ?? 0;
+        var budgetText = pace.ElapsedPercent is { } elapsed
+            ? $"{elapsed:0}% of window elapsed"
+            : "Elapsed budget unavailable";
+        var paceDeltaText = pace.DeltaPercent switch
+        {
+            null => "Not enough reset data to compare pace",
+            <= 0 => $"{Math.Abs(pace.DeltaPercent.Value):0}% under budget",
+            _ => $"{pace.DeltaPercent.Value:0}% ahead of budget"
+        };
 
         return new QuotaCardModel(
             window.Key,
@@ -75,8 +88,11 @@ public static class DashboardProjector
             remaining,
             reset,
             paceText,
+            expected,
+            budgetText,
+            paceDeltaText,
             pace.State,
-            $"{providerName} {window.Label}: {used}, {remaining}, {reset}, {paceText}.");
+            $"{providerName} {window.Label}: {used}, {remaining}, {reset}, {paceText}, {paceDeltaText}.");
     }
 
     private static string ResetText(DateTimeOffset? resetsAt, DateTimeOffset now)

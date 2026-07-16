@@ -9,24 +9,75 @@
             <ResourceDictionary.MergedDictionaries>
                 <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
             </ResourceDictionary.MergedDictionaries>
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Dark">
+                    <SolidColorBrush x:Key="DashboardPageBrush" Color="#111317" />
+                    <SolidColorBrush x:Key="DashboardCardBrush" Color="#181B20" />
+                    <SolidColorBrush x:Key="DashboardCardAltBrush" Color="#1E2228" />
+                    <SolidColorBrush x:Key="DashboardStrokeBrush" Color="#2B3038" />
+                    <SolidColorBrush x:Key="DashboardAccentBrush" Color="#2F8FFF" />
+                    <SolidColorBrush x:Key="DashboardAccentSoftBrush" Color="#1D304D" />
+                    <SolidColorBrush x:Key="DashboardWarningBrush" Color="#FFB454" />
+                    <SolidColorBrush x:Key="DashboardWarningSoftBrush" Color="#382B18" />
+                    <SolidColorBrush x:Key="DashboardSuccessBrush" Color="#4DD4A4" />
+                    <SolidColorBrush x:Key="DashboardMutedTextBrush" Color="#9BA5B2" />
+                    <SolidColorBrush x:Key="DashboardChartGridBrush" Color="#343941" />
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Light">
+                    <SolidColorBrush x:Key="DashboardPageBrush" Color="#F5F7FA" />
+                    <SolidColorBrush x:Key="DashboardCardBrush" Color="#FFFFFF" />
+                    <SolidColorBrush x:Key="DashboardCardAltBrush" Color="#F0F3F7" />
+                    <SolidColorBrush x:Key="DashboardStrokeBrush" Color="#DDE2E9" />
+                    <SolidColorBrush x:Key="DashboardAccentBrush" Color="#0969DA" />
+                    <SolidColorBrush x:Key="DashboardAccentSoftBrush" Color="#DCEBFF" />
+                    <SolidColorBrush x:Key="DashboardWarningBrush" Color="#9A5B00" />
+                    <SolidColorBrush x:Key="DashboardWarningSoftBrush" Color="#FFF2D8" />
+                    <SolidColorBrush x:Key="DashboardSuccessBrush" Color="#087F5B" />
+                    <SolidColorBrush x:Key="DashboardMutedTextBrush" Color="#5E6875" />
+                    <SolidColorBrush x:Key="DashboardChartGridBrush" Color="#D7DDE5" />
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
             <Style x:Key="PageTitleTextStyle" TargetType="TextBlock">
                 <Setter Property="FontFamily" Value="{ThemeResource ContentControlThemeFontFamily}" />
-                <Setter Property="FontSize" Value="28" />
+                <Setter Property="FontSize" Value="30" />
                 <Setter Property="FontWeight" Value="SemiBold" />
                 <Setter Property="TextWrapping" Value="Wrap" />
+            </Style>
+            <Style x:Key="EyebrowTextStyle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="11" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="CharacterSpacing" Value="90" />
+                <Setter Property="Foreground" Value="{ThemeResource DashboardAccentBrush}" />
             </Style>
             <Style x:Key="SectionTitleTextStyle" TargetType="TextBlock">
                 <Setter Property="FontFamily" Value="{ThemeResource ContentControlThemeFontFamily}" />
-                <Setter Property="FontSize" Value="20" />
+                <Setter Property="FontSize" Value="18" />
                 <Setter Property="FontWeight" Value="SemiBold" />
                 <Setter Property="TextWrapping" Value="Wrap" />
             </Style>
+            <Style x:Key="MetricValueTextStyle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="28" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="TextWrapping" Value="NoWrap" />
+            </Style>
             <Style x:Key="ProviderCardStyle" TargetType="Border">
-                <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorDefaultBrush}" />
-                <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}" />
+                <Setter Property="Background" Value="{ThemeResource DashboardCardBrush}" />
+                <Setter Property="BorderBrush" Value="{ThemeResource DashboardStrokeBrush}" />
                 <Setter Property="BorderThickness" Value="1" />
-                <Setter Property="CornerRadius" Value="8" />
-                <Setter Property="Padding" Value="20" />
+                <Setter Property="CornerRadius" Value="12" />
+                <Setter Property="Padding" Value="18" />
+            </Style>
+            <Style x:Key="DashboardCardStyle" TargetType="Border">
+                <Setter Property="Background" Value="{ThemeResource DashboardCardBrush}" />
+                <Setter Property="BorderBrush" Value="{ThemeResource DashboardStrokeBrush}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="CornerRadius" Value="12" />
+                <Setter Property="Padding" Value="16" />
+            </Style>
+            <Style x:Key="PillBorderStyle" TargetType="Border">
+                <Setter Property="Background" Value="{ThemeResource DashboardCardAltBrush}" />
+                <Setter Property="CornerRadius" Value="10" />
+                <Setter Property="Padding" Value="9,4" />
             </Style>
         </ResourceDictionary>
     </Application.Resources>

@@ -1,5 +1,6 @@
 using System.Net;
 using SessionWatcher.Core.Alerts;
+using SessionWatcher.Core.Analytics;
 using SessionWatcher.Core.History;
 using SessionWatcher.Core.Plugins;
 using SessionWatcher.Core.Providers;
@@ -48,6 +49,7 @@ public sealed class AppRuntime : IDisposable
         };
 
         Catalog = ProviderCatalog.Load(PluginDirectory, builtIns);
+        LocalAnalytics = new CodexLocalAnalyticsReader(null, timeProvider);
         History = new JsonUsageHistoryStore(
             Path.Combine(DataDirectory, "history.json"),
             TimeSpan.FromDays(90),
@@ -70,6 +72,8 @@ public sealed class AppRuntime : IDisposable
     public UsageCoordinator Coordinator { get; }
 
     public UsageAlertMonitor AlertMonitor { get; }
+
+    public ILocalAnalyticsReader LocalAnalytics { get; }
 
     public AppSettings CurrentSettings { get; private set; } = AppSettings.Default;
 
