@@ -23,8 +23,55 @@ The app keeps two kinds of numbers deliberately separate:
   sources and stale-data labels.
 
 See [docs/PRODUCT_BRIEF.md](docs/PRODUCT_BRIEF.md) for the researched feature
-scope, alternatives, and implementation contract.
+scope, alternatives, and provider contract. See [docs/PLUGINS.md](docs/PLUGINS.md)
+for the external provider API and its trust boundary.
 
 ## Status
 
-Initial native Windows implementation is in progress.
+The first working native prototype includes:
+
+- a responsive WinUI 3 dashboard for Claude Code and OpenAI Codex;
+- provider-reported windows, reset countdowns, remaining quota, and pace;
+- an explicit Codex local-session fallback when app-server versions drift;
+- sanitized 90-day local history, threshold alerts, and a Windows tray icon;
+- configurable refresh/startup/minimize-to-tray behavior;
+- trusted external provider DLL discovery with duplicate/error isolation.
+
+On this development machine, Codex currently uses the clearly labeled local
+fallback because the installed CLI cannot parse a newly returned plan name.
+Claude reports an actionable sign-in/expiry state until `claude /login`
+succeeds. Neither condition prevents the other provider from updating.
+
+## Build and run
+
+Requirements: Windows 10 version 1809 or newer, Developer Mode, the .NET 10
+SDK, and the Windows application-development workload from Visual Studio.
+
+```powershell
+dotnet restore SessionWatcher.slnx
+dotnet build SessionWatcher.slnx -c Release
+dotnet test SessionWatcher.Core.Tests -c Release
+dotnet run --project SessionWatcher -c Debug
+```
+
+The app is packaged for its development launch, so `dotnet run` registers a
+debug identity before opening it. Application data is under the current
+package's `LocalState\SessionWatcher` folder. Use the Plugins page to open the
+exact folder.
+
+To create a self-contained x64 file-system publish:
+
+```powershell
+dotnet publish SessionWatcher\SessionWatcher.csproj -c Release -p:Platform=x64
+```
+
+Run `scripts\smoke-test.ps1` with no SessionWatcher instance open to verify a
+real packaged launch, its accessibility surface, and sanitized persistence.
+
+## Repository layout
+
+- `SessionWatcher` — WinUI 3 shell, tray integration, and composition root.
+- `SessionWatcher.Core` — provider contracts, Claude/Codex adapters, history,
+  alerts, plugins, and presentation projection.
+- `SessionWatcher.Core.Tests` — isolated contract and safety tests.
+- `docs` — research, architecture decisions, and plugin authoring.

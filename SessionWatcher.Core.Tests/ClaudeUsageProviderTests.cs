@@ -74,6 +74,73 @@ public sealed class ClaudeUsageProviderTests
         Assert.DoesNotContain(token, snapshot.Diagnostic, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData(HttpStatusCode.TooManyRequests, "Claude temporarily limited usage checks. SessionWatcher will retry.")]
+    [InlineData(HttpStatusCode.ServiceUnavailable, "Claude usage is temporarily unavailable.")]
+    public async Task Provider_reports_safe_service_errors(HttpStatusCode statusCode, string expectedDiagnostic)
+    {
+        var provider = CreateProvider(_ => new HttpResponseMessage(statusCode));
+
+        var snapshot = await provider.GetSnapshotAsync(CancellationToken.None);
+
+        Assert.Equal(SnapshotStatus.Error, snapshot.Status);
+        Assert.Equal(expectedDiagnostic, snapshot.Diagnostic);
+    }
+
+    [Fact]
+    public async Task Provider_reports_malformed_success_responses_without_exposing_payloads()
+    {
+        var provider = CreateProvider(_ => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent("not-json-sensitive-payload")
+        });
+
+        var snapshot = await provider.GetSnapshotAsync(CancellationToken.None);
+
+        Assert.Equal(SnapshotStatus.Error, snapshot.Status);
+        Assert.DoesNotContain("sensitive-payload", snapshot.Diagnostic, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(true, "Cannot reach the Claude usage service. Check your connection.")]
+    [InlineData(false, "Claude usage is temporarily unavailable.")]
+    public async Task Provider_maps_transport_failures_to_actionable_safe_errors(
+        bool networkFailure,
+        string expectedDiagnostic)
+    {
+        var provider = CreateProvider(_ =>
+        {
+            if (networkFailure)
+            {
+                throw new HttpRequestException("network details");
+            }
+
+            throw new InvalidOperationException("handler details");
+        });
+
+        var snapshot = await provider.GetSnapshotAsync(CancellationToken.None);
+
+        Assert.Equal(SnapshotStatus.Error, snapshot.Status);
+        Assert.Equal(expectedDiagnostic, snapshot.Diagnostic);
+    }
+
+    [Fact]
+    public async Task Provider_preserves_cancellation()
+    {
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+        var provider = CreateProvider(_ => throw new OperationCanceledException(cancellation.Token));
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => provider.GetSnapshotAsync(cancellation.Token));
+    }
+
+    private static ClaudeUsageProvider CreateProvider(Func<HttpRequestMessage, HttpResponseMessage> responseFactory) =>
+        new(
+            new StubClaudeCredentialReader("test-token"),
+            new HttpClient(new StubHttpHandler(responseFactory)),
+            new FixedTimeProvider(new DateTimeOffset(2026, 7, 16, 12, 0, 0, TimeSpan.Zero)));
+
     private sealed class StubClaudeCredentialReader(string? token) : IClaudeCredentialReader
     {
         public ValueTask<string?> ReadAccessTokenAsync(CancellationToken cancellationToken) =>
