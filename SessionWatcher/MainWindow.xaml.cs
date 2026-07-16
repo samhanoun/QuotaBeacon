@@ -18,7 +18,12 @@ public sealed partial class MainWindow : Window
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(AppTitleBar);
         AppWindow.SetIcon("Assets/AppIcon.ico");
-        AppWindow.Resize(new SizeInt32(1180, 820));
+        var workArea = DisplayArea
+            .GetFromWindowId(AppWindow.Id, DisplayAreaFallback.Primary)
+            .WorkArea;
+        AppWindow.Resize(new SizeInt32(
+            Math.Max(640, Math.Min(1180, (int)(workArea.Width * 0.9))),
+            Math.Max(600, Math.Min(900, (int)(workArea.Height * 0.9)))));
         AppWindow.Closing += OnAppWindowClosing;
 
         _trayIcon = new TrayIconService(
