@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "SessionWatcher (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "SessionWatcher (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

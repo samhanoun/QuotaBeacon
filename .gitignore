@@ -1,0 +1,23 @@
+# Build outputs
+bin/
+obj/
+TestResults/
+artifacts/
+
+# Visual Studio and Rider
+.vs/
+.idea/
+*.user
+*.suo
+
+# Local application state
+*.tmp
+*.log
+
+# Packaged app outputs
+AppPackages/
+BundleArtifacts/
+
+# Local plugins are trusted binaries and are not source-controlled
+plugins/*.dll
+plugins/*.pdb
