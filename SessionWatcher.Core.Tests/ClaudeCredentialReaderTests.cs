@@ -13,10 +13,10 @@ public sealed class ClaudeCredentialReaderTests : IDisposable
         await File.WriteAllTextAsync(
             Path.Combine(_directory, ".credentials.json"),
             """{"claudeAiOauth":{"accessToken":"expected","refreshToken":"must-not-be-used"},"other":"ignored"}""",
-            TestContext.Current.CancellationToken);
+            CancellationToken.None);
         var reader = new ClaudeCredentialReader(_directory);
 
-        var token = await reader.ReadAccessTokenAsync(TestContext.Current.CancellationToken);
+        var token = await reader.ReadAccessTokenAsync(CancellationToken.None);
 
         Assert.Equal("expected", token);
     }
@@ -33,12 +33,12 @@ public sealed class ClaudeCredentialReaderTests : IDisposable
             await File.WriteAllTextAsync(
                 Path.Combine(_directory, ".credentials.json"),
                 contents,
-                TestContext.Current.CancellationToken);
+                CancellationToken.None);
         }
 
         var reader = new ClaudeCredentialReader(_directory);
 
-        Assert.Null(await reader.ReadAccessTokenAsync(TestContext.Current.CancellationToken));
+        Assert.Null(await reader.ReadAccessTokenAsync(CancellationToken.None));
     }
 
     public void Dispose()

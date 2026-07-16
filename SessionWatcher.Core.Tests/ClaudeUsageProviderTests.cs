@@ -29,7 +29,7 @@ public sealed class ClaudeUsageProviderTests
             new HttpClient(handler),
             new FixedTimeProvider(new DateTimeOffset(2026, 7, 16, 12, 0, 0, TimeSpan.Zero)));
 
-        var snapshot = await provider.GetSnapshotAsync(TestContext.Current.CancellationToken);
+        var snapshot = await provider.GetSnapshotAsync(CancellationToken.None);
 
         Assert.Equal(SnapshotStatus.Available, snapshot.Status);
         Assert.NotNull(captured);
@@ -47,7 +47,7 @@ public sealed class ClaudeUsageProviderTests
             new HttpClient(handler),
             TimeProvider.System);
 
-        var snapshot = await provider.GetSnapshotAsync(TestContext.Current.CancellationToken);
+        var snapshot = await provider.GetSnapshotAsync(CancellationToken.None);
 
         Assert.Equal(SnapshotStatus.Unavailable, snapshot.Status);
         Assert.Equal("Sign in with Claude Code to enable usage monitoring.", snapshot.Diagnostic);
@@ -67,7 +67,7 @@ public sealed class ClaudeUsageProviderTests
             new HttpClient(handler),
             TimeProvider.System);
 
-        var snapshot = await provider.GetSnapshotAsync(TestContext.Current.CancellationToken);
+        var snapshot = await provider.GetSnapshotAsync(CancellationToken.None);
 
         Assert.Equal(SnapshotStatus.Error, snapshot.Status);
         Assert.Equal("Claude Code authentication expired. Run claude /login and refresh.", snapshot.Diagnostic);

@@ -17,12 +17,12 @@ public sealed class JsonUsageHistoryStoreTests : IDisposable
         var old = Snapshot(now.AddDays(-91), "old-secret");
         var current = Snapshot(now, "credential-never-persisted");
 
-        await store.AppendAsync(old, TestContext.Current.CancellationToken);
-        await store.AppendAsync(current, TestContext.Current.CancellationToken);
-        await store.AppendAsync(current, TestContext.Current.CancellationToken);
+        await store.AppendAsync(old, CancellationToken.None);
+        await store.AppendAsync(current, CancellationToken.None);
+        await store.AppendAsync(current, CancellationToken.None);
 
-        var saved = await store.ReadAsync(null, TestContext.Current.CancellationToken);
-        var raw = await File.ReadAllTextAsync(path, TestContext.Current.CancellationToken);
+        var saved = await store.ReadAsync(null, CancellationToken.None);
+        var raw = await File.ReadAllTextAsync(path, CancellationToken.None);
         var only = Assert.Single(saved);
         Assert.Equal(now, only.ObservedAt);
         Assert.Null(only.Diagnostic);
@@ -36,10 +36,10 @@ public sealed class JsonUsageHistoryStoreTests : IDisposable
         Directory.CreateDirectory(_directory);
         var now = new DateTimeOffset(2026, 7, 16, 12, 0, 0, TimeSpan.Zero);
         var store = new JsonUsageHistoryStore(Path.Combine(_directory, "history.json"), TimeSpan.FromDays(90), new FixedTimeProvider(now));
-        await store.AppendAsync(Snapshot(now, null), TestContext.Current.CancellationToken);
-        await store.AppendAsync(Snapshot(now, null) with { ProviderId = "claude", ProviderName = "Claude" }, TestContext.Current.CancellationToken);
+        await store.AppendAsync(Snapshot(now, null), CancellationToken.None);
+        await store.AppendAsync(Snapshot(now, null) with { ProviderId = "claude", ProviderName = "Claude" }, CancellationToken.None);
 
-        var saved = await store.ReadAsync("claude", TestContext.Current.CancellationToken);
+        var saved = await store.ReadAsync("claude", CancellationToken.None);
 
         Assert.Single(saved);
         Assert.Equal("claude", saved[0].ProviderId);

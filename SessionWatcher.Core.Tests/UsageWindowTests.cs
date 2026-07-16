@@ -31,8 +31,8 @@ public sealed class UsageWindowTests
         var reading = UsagePace.Evaluate(CreateWindow(used, duration, reset), ObservedAt);
 
         Assert.Equal(expected, reading.State);
-        Assert.Equal(elapsed, reading.ElapsedPercent, precision: 5);
-        Assert.Equal(used - elapsed, reading.DeltaPercent, precision: 5);
+        Assert.Equal(elapsed, reading.ElapsedPercent!.Value, precision: 5);
+        Assert.Equal(used - elapsed, reading.DeltaPercent!.Value, precision: 5);
     }
 
     [Fact]

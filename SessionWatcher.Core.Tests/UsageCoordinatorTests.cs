@@ -19,7 +19,7 @@ public sealed class UsageCoordinatorTests
         };
         var coordinator = new UsageCoordinator(providers, history, new FixedTimeProvider(now));
 
-        var results = await coordinator.RefreshAsync(TestContext.Current.CancellationToken);
+        var results = await coordinator.RefreshAsync(CancellationToken.None);
 
         Assert.Equal(2, results.Count);
         Assert.Equal(SnapshotStatus.Available, results.Single(result => result.ProviderId == "claude").Status);

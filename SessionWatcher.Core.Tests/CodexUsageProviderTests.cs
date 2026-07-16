@@ -17,7 +17,7 @@ public sealed class CodexUsageProviderTests
             new StubCodexSource(() => fallback),
             new FixedTimeProvider(ObservedAt));
 
-        var snapshot = await provider.GetSnapshotAsync(TestContext.Current.CancellationToken);
+        var snapshot = await provider.GetSnapshotAsync(CancellationToken.None);
 
         Assert.Equal(SnapshotSource.LocalFallback, snapshot.Source);
         Assert.Equal("Live Codex usage unavailable; showing the latest local quota snapshot.", snapshot.Diagnostic);
@@ -32,7 +32,7 @@ public sealed class CodexUsageProviderTests
             new StubCodexSource(() => throw new IOException("secret two")),
             new FixedTimeProvider(ObservedAt));
 
-        var snapshot = await provider.GetSnapshotAsync(TestContext.Current.CancellationToken);
+        var snapshot = await provider.GetSnapshotAsync(CancellationToken.None);
 
         Assert.Equal(SnapshotStatus.Error, snapshot.Status);
         Assert.Equal("Codex usage is unavailable. Start Codex once, then refresh.", snapshot.Diagnostic);
