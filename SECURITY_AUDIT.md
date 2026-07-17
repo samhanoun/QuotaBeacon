@@ -29,7 +29,8 @@ isolates provider-internal cancellation; and evicts stale alert state.
 GitHub CI repeats those checks. Separate workflows run CodeQL's extended C#
 queries, dependency review at Moderate-or-higher severity, and full-history
 secret scanning. Third-party actions are pinned to immutable commit SHAs and
-Dependabot proposes reviewed updates.
+the scanner binary is checksum-pinned. Dependabot proposes reviewed action and
+NuGet updates.
 
 ## Residual trust boundaries
 
