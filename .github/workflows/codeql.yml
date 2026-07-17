@@ -45,7 +45,9 @@ jobs:
           queries: security-extended
 
       - name: Restore locked dependencies
-        run: dotnet restore SessionWatcher.slnx --locked-mode
+        run: |
+          dotnet restore SessionWatcher.slnx --locked-mode
+          dotnet restore SessionWatcher/SessionWatcher.csproj --locked-mode --no-dependencies -r win-x64
 
       - name: Build analyzed code
         run: dotnet build SessionWatcher.slnx -c Release --no-restore
