@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Page
+    x:Class="QuotaBeacon.Pages.SettingsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid Background="{ThemeResource DashboardPageBrush}">
+    <ScrollViewer>
+        <Grid MaxWidth="820" Padding="28,24,28,40" HorizontalAlignment="Stretch">
+            <StackPanel Spacing="22">
+                <StackPanel Spacing="4">
+                    <TextBlock Style="{StaticResource EyebrowTextStyle}" Text="PREFERENCES" />
+                    <TextBlock Style="{StaticResource PageTitleTextStyle}" Text="Settings" />
+                    <TextBlock
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="Quota Beacon stores these settings only in your local app-data folder."
+                        TextWrapping="Wrap" />
+                </StackPanel>
+
+                <Border Style="{StaticResource DashboardCardStyle}">
+                    <StackPanel Spacing="16">
+                        <StackPanel Spacing="4">
+                            <TextBlock FontWeight="SemiBold" Text="Providers" />
+                            <TextBlock
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Text="Choose which services appear on the overview and refresh in the background. Disabled providers keep their saved history."
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+                        <StackPanel x:Name="ProviderTogglesPanel" Spacing="12" />
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource DashboardCardStyle}">
+                <StackPanel Spacing="24">
+                    <StackPanel Spacing="8">
+                        <TextBlock FontWeight="SemiBold" Text="Refresh interval" />
+                        <TextBlock
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="How often provider usage is checked while the app is running."
+                            TextWrapping="Wrap" />
+                        <ComboBox
+                            x:Name="RefreshIntervalCombo"
+                            AutomationProperties.Name="Refresh interval"
+                            MaxWidth="320"
+                            HorizontalAlignment="Left">
+                            <ComboBoxItem Content="Every minute" Tag="1" />
+                            <ComboBoxItem Content="Every 3 minutes" Tag="3" />
+                            <ComboBoxItem Content="Every 5 minutes" Tag="5" />
+                            <ComboBoxItem Content="Every 15 minutes" Tag="15" />
+                        </ComboBox>
+                    </StackPanel>
+
+                    <StackPanel Spacing="8">
+                        <TextBlock FontWeight="SemiBold" Text="Start with Windows" />
+                        <TextBlock
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="Adds or removes Quota Beacon from your current user's Startup list."
+                            TextWrapping="Wrap" />
+                        <ToggleSwitch
+                            x:Name="StartWithWindowsToggle"
+                            AutomationProperties.Name="Start Quota Beacon with Windows" />
+                    </StackPanel>
+
+                    <StackPanel Spacing="8">
+                        <TextBlock FontWeight="SemiBold" Text="Keep running in the tray" />
+                        <TextBlock
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="Closing the window hides it while usage monitoring continues."
+                            TextWrapping="Wrap" />
+                        <ToggleSwitch
+                            x:Name="MinimizeToTrayToggle"
+                            AutomationProperties.Name="Keep Quota Beacon running in the tray" />
+                    </StackPanel>
+                </StackPanel>
+                </Border>
+
+                <InfoBar x:Name="SaveStatus" IsClosable="True" IsOpen="False" />
+                <Button
+                    AutomationProperties.Name="Save Quota Beacon settings"
+                    Click="OnSaveClicked"
+                    Content="Save settings"
+                    HorizontalAlignment="Left" />
+            </StackPanel>
+        </Grid>
+    </ScrollViewer>
+    </Grid>
+</Page>

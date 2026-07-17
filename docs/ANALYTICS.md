@@ -1,6 +1,6 @@
 # Local analytics
 
-QuotaBeacon derives Codex activity analytics from local JSONL metadata. It
+Quota Beacon derives Codex activity analytics from local JSONL metadata. It
 does not call a billing API and the dollar figures are not Codex subscription
 charges.
 

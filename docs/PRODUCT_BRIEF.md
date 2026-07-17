@@ -15,7 +15,7 @@
 5. As a plugin author, I want to return a provider-neutral usage snapshot, so a
    new tool can use the same dashboard, history, alerts, and tray surfaces.
 
-## QuotaBeacon reference scope
+## Quota Beacon reference scope
 
 The macOS reference product advertises:
 
@@ -65,12 +65,21 @@ fallback must be labeled local and may be stale.
 Read the Claude Code OAuth access token from its existing credentials file,
 honoring `CLAUDE_CONFIG_DIR`, and send it only to
 `https://api.anthropic.com/api/oauth/usage`. The token is never persisted by
-QuotaBeacon or logged. Parse quota objects dynamically so newly introduced
+Quota Beacon or logged. Parse quota objects dynamically so newly introduced
 model-scoped windows are visible without a release.
 
 Claude's official status-line and `/usage` surfaces remain the user-verifiable
 reference. Authentication errors should instruct the user to run Claude's
-normal login flow; QuotaBeacon does not alter credentials.
+normal login flow; Quota Beacon does not alter credentials.
+
+### Gemini CLI and Antigravity
+
+Launch only the installed official CLIs in a real interactive terminal, using
+Gemini's `/model` quota view and Antigravity's documented `/usage` view. Capture
+bounded terminal output with a deadline, terminate the contained process tree
+after capture or timeout, strip terminal controls, and project the remaining or
+used percentages into the neutral quota model. Quota Beacon never reads or
+reuses either tool's OAuth or keyring material.
 
 ## Neutral usage model
 
@@ -91,7 +100,7 @@ elapsed-window percentage, pace delta, and reset countdown.
 - No prompt, response, tool-call, file-content, or source-code collection.
 - Local analytics parse only Codex model names and per-turn token counters;
   unrelated session records are skipped before JSON parsing.
-- No telemetry and no QuotaBeacon service.
+- No telemetry and no Quota Beacon service.
 - Network allowlist in built-in providers: Anthropic usage endpoint only;
   Codex networking is delegated to the installed official app-server.
 - OAuth values are never included in exceptions, logs, history, or UI.
@@ -105,7 +114,11 @@ elapsed-window percentage, pace delta, and reset countdown.
 - SessionWatcher: https://sessionwatcher.com/
 - OpenAI Codex app-server protocol: https://github.com/openai/codex/blob/main/codex-rs/app-server/README.md
 - Claude Code usage errors and official usage surfaces: https://code.claude.com/docs/en/errors
-- Win-CodexBar: https://github.com/Finesssee/Win-CodexBar
+- Gemini CLI quota and pricing: https://github.com/google-gemini/gemini-cli/blob/main/docs/resources/quota-and-pricing.md
+- Gemini CLI command reference: https://github.com/google-gemini/gemini-cli/blob/main/docs/reference/commands.md
+- Antigravity CLI: https://github.com/google-antigravity/antigravity-cli
+- Google Antigravity CLI `/usage` codelab: https://codelabs.developers.google.com/sdd-agy-cli
+- Win-CodexBar: https://github.com/nesszer/Win-CodexBar
 - Wburn: https://xakpc.dev/apps/wburn/
 - Tokus: https://www.tokus.io/
 - Usage Monitor for Claude: https://github.com/jens-duttke/usage-monitor-for-claude

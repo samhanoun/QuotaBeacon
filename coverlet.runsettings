@@ -5,8 +5,8 @@
       <DataCollector friendlyName="XPlat Code Coverage">
         <Configuration>
           <Format>cobertura</Format>
-          <Include>[SessionWatcher.Core]*</Include>
-          <Exclude>[SessionWatcher.Core.Tests*]*</Exclude>
+          <Include>[QuotaBeacon.Core]*</Include>
+          <Exclude>[QuotaBeacon.Core.Tests*]*</Exclude>
           <ExcludeByFile>**/obj/**</ExcludeByFile>
           <SingleHit>false</SingleHit>
           <UseSourceLink>true</UseSourceLink>

@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="QuotaBeacon.Core.Tests/QuotaBeacon.Core.Tests.csproj" />
+  <Project Path="QuotaBeacon.Core/QuotaBeacon.Core.csproj" />
+  <Project Path="QuotaBeacon/QuotaBeacon.csproj" />
+</Solution>
