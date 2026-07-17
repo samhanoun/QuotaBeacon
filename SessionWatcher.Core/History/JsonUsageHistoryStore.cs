@@ -3,10 +3,13 @@ using SessionWatcher.Core.Models;
 
 namespace SessionWatcher.Core.History;
 
+// The app-lifetime semaphore may still be awaited during shutdown; disposing it would race those operations.
+#pragma warning disable CA1001
 public sealed class JsonUsageHistoryStore(
     string path,
     TimeSpan retention,
     TimeProvider timeProvider) : IUsageHistoryStore
+#pragma warning restore CA1001
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private readonly SemaphoreSlim _gate = new(1, 1);
@@ -117,7 +120,6 @@ public sealed class JsonUsageHistoryStore(
             }
         }
     }
-
     private sealed record StoredSnapshot(
         string ProviderId,
         string ProviderName,

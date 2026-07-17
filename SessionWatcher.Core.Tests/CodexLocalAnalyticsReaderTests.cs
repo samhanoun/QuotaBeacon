@@ -64,6 +64,33 @@ public sealed class CodexLocalAnalyticsReaderTests : IDisposable
         Assert.All(result.Daily, day => Assert.Equal(0, day.Usage.TotalTokens));
     }
 
+    [Fact]
+    public async Task Reader_skips_overlong_records_within_bounded_file_reads()
+    {
+        var sessions = Path.Combine(_codexHome, "sessions");
+        Directory.CreateDirectory(sessions);
+        var oversized = """{"timestamp":"2026-07-17T09:00:00Z","type":"event_msg","payload":{"type":"token_count","padding":""" +
+                        new string('x', 256) +
+                        ""","info":{"last_token_usage":{"total_tokens":999}}}}""";
+        var valid = """{"timestamp":"2026-07-17T09:01:00Z","type":"event_msg","payload":{"type":"token_count","info":{"last_token_usage":{"input_tokens":10,"total_tokens":10}}}}""";
+        await File.WriteAllLinesAsync(
+            Path.Combine(sessions, "bounded.jsonl"),
+            [oversized, valid],
+            CancellationToken.None);
+        var reader = new CodexLocalAnalyticsReader(
+            _codexHome,
+            new FixedTimeProvider(new DateTimeOffset(2026, 7, 17, 20, 0, 0, TimeSpan.Zero)),
+            maxFiles: 4,
+            maxDiscoveryEntries: 100,
+            maxBytesPerFile: 1024,
+            maxTotalBytes: 1024,
+            maxLineChars: 192);
+
+        var result = await reader.ReadAsync(CancellationToken.None);
+
+        Assert.Equal(10, result.Today.TotalTokens);
+    }
+
     [Theory]
     [InlineData("gpt-5.6-sol", 5, 0.5, 30)]
     [InlineData("gpt-5.6-terra", 2.5, 0.25, 15)]

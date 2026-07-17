@@ -1,6 +1,6 @@
-# SessionWatcher for Windows
+# QuotaBeacon for Windows
 
-SessionWatcher is a native Windows usage monitor for AI coding tools. Its first
+QuotaBeacon is a native Windows usage monitor for AI coding tools. Its first
 providers are Claude Code and OpenAI Codex, with a plugin contract for adding
 more providers without changing the app shell.
 
@@ -41,6 +41,12 @@ The first working native prototype includes:
 - configurable refresh/startup/minimize-to-tray behavior;
 - trusted external provider DLL discovery with duplicate/error isolation.
 
+The July 2026 repository-wide security review closed all 60 source worklist
+rows with no deferred work. Four Low/P3 provider-response availability issues
+were identified and remediated with bounded input, linear normalization, and
+exception-safe projection. See [SECURITY_AUDIT.md](SECURITY_AUDIT.md) and
+[SECURITY.md](SECURITY.md).
+
 On this development machine, Codex currently uses the clearly labeled local
 fallback because the installed CLI cannot parse a newly returned plan name.
 Claude reports an actionable sign-in/expiry state until `claude /login`
@@ -59,9 +65,10 @@ dotnet run --project SessionWatcher -c Debug
 ```
 
 The app is packaged for its development launch, so `dotnet run` registers a
-debug identity before opening it. Application data is under the current
-package's `LocalState\SessionWatcher` folder. Use the Plugins page to open the
-exact folder.
+debug identity before opening it. New installs use the current package's
+`LocalState\QuotaBeacon` folder. Existing installations continue using
+`LocalState\SessionWatcher` automatically so settings and history are
+preserved. Use the Plugins page to open the exact folder.
 
 To create a self-contained x64 file-system publish:
 
@@ -69,12 +76,20 @@ To create a self-contained x64 file-system publish:
 dotnet publish SessionWatcher\SessionWatcher.csproj -c Release -p:Platform=x64
 ```
 
-Run `scripts\smoke-test.ps1` with no SessionWatcher instance open to verify a
+Run `scripts\smoke-test.ps1` with no QuotaBeacon instance open to verify a
 real packaged launch, its accessibility surface, and sanitized persistence.
+
+## Security and development workflow
+
+Pull requests run Windows release builds, the complete test suite with an 80%
+line-coverage gate, formatting checks, NuGet vulnerability audits, CodeQL,
+dependency review, and secret scanning. GitHub Actions and reusable supply-chain
+steps are pinned to immutable commit SHAs and updated by Dependabot.
 
 ## Repository layout
 
-- `SessionWatcher` — WinUI 3 shell, tray integration, and composition root.
+- `SessionWatcher` — WinUI 3 shell, tray integration, and composition root
+  (the folder remains stable for build compatibility).
 - `SessionWatcher.Core` — provider contracts, Claude/Codex adapters, history,
   alerts, plugins, and presentation projection.
 - `SessionWatcher.Core.Tests` — isolated contract and safety tests.

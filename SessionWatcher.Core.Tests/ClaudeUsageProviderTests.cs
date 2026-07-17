@@ -75,7 +75,7 @@ public sealed class ClaudeUsageProviderTests
     }
 
     [Theory]
-    [InlineData(HttpStatusCode.TooManyRequests, "Claude temporarily limited usage checks. SessionWatcher will retry.")]
+    [InlineData(HttpStatusCode.TooManyRequests, "Claude temporarily limited usage checks. QuotaBeacon will retry.")]
     [InlineData(HttpStatusCode.ServiceUnavailable, "Claude usage is temporarily unavailable.")]
     public async Task Provider_reports_safe_service_errors(HttpStatusCode statusCode, string expectedDiagnostic)
     {
@@ -135,6 +135,54 @@ public sealed class ClaudeUsageProviderTests
             () => provider.GetSnapshotAsync(cancellation.Token));
     }
 
+    [Theory]
+    [InlineData(64, SnapshotStatus.Available)]
+    [InlineData(65, SnapshotStatus.Error)]
+    public async Task Provider_enforces_the_decoded_response_budget(
+        int responseBytes,
+        SnapshotStatus expectedStatus)
+    {
+        const int maxResponseBytes = 64;
+        const string json = """{"five_hour":{"utilization":25}}""";
+        var body = json.PadRight(responseBytes, ' ');
+        var provider = new ClaudeUsageProvider(
+            new StubClaudeCredentialReader("test-token"),
+            new HttpClient(new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StreamContent(new MemoryStream(Encoding.UTF8.GetBytes(body)))
+            })),
+            TimeProvider.System,
+            maxResponseBytes,
+            TimeSpan.FromSeconds(1));
+
+        var snapshot = await provider.GetSnapshotAsync(CancellationToken.None);
+
+        Assert.Equal(expectedStatus, snapshot.Status);
+        if (expectedStatus == SnapshotStatus.Error)
+        {
+            Assert.Equal("Claude returned an unreadable usage response.", snapshot.Diagnostic);
+        }
+    }
+
+    [Fact]
+    public async Task Provider_times_out_a_body_that_stalls_after_headers()
+    {
+        var provider = new ClaudeUsageProvider(
+            new StubClaudeCredentialReader("test-token"),
+            new HttpClient(new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StreamContent(new StallingStream())
+            })),
+            TimeProvider.System,
+            maxResponseBytes: 1024,
+            bodyReadTimeout: TimeSpan.FromMilliseconds(50));
+
+        var snapshot = await provider.GetSnapshotAsync(CancellationToken.None);
+
+        Assert.Equal(SnapshotStatus.Error, snapshot.Status);
+        Assert.Equal("Claude returned an unreadable usage response.", snapshot.Diagnostic);
+    }
+
     private static ClaudeUsageProvider CreateProvider(Func<HttpRequestMessage, HttpResponseMessage> responseFactory) =>
         new(
             new StubClaudeCredentialReader("test-token"),
@@ -156,5 +204,33 @@ public sealed class ClaudeUsageProviderTests
             CallCount++;
             return Task.FromResult(responseFactory(request));
         }
+    }
+
+    private sealed class StallingStream : Stream
+    {
+        public override bool CanRead => true;
+        public override bool CanSeek => false;
+        public override bool CanWrite => false;
+        public override long Length => 0;
+        public override long Position { get => 0; set => throw new NotSupportedException(); }
+
+        public override void Flush()
+        {
+        }
+
+        public override int Read(byte[] buffer, int offset, int count) =>
+            throw new NotSupportedException();
+
+        public override async ValueTask<int> ReadAsync(
+            Memory<byte> buffer,
+            CancellationToken cancellationToken = default)
+        {
+            await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+            return 0;
+        }
+
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
     }
 }

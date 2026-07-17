@@ -30,7 +30,7 @@ public sealed class UsageCoordinator(
                 {
                     await historyStore.AppendAsync(snapshot, cancellationToken);
                 }
-                catch (OperationCanceledException)
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                 {
                     throw;
                 }
@@ -42,7 +42,7 @@ public sealed class UsageCoordinator(
 
             return snapshot;
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
             throw;
         }

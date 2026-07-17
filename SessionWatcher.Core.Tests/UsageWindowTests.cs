@@ -46,6 +46,42 @@ public sealed class UsageWindowTests
         Assert.Null(reading.ElapsedPercent);
     }
 
+    [Fact]
+    public void Pace_is_unknown_when_reset_minus_duration_is_out_of_range()
+    {
+        var reading = UsagePace.Evaluate(
+            CreateWindow(42, TimeSpan.FromHours(5), DateTimeOffset.MinValue),
+            ObservedAt);
+
+        Assert.Equal(PaceState.Unknown, reading.State);
+        Assert.Null(reading.ElapsedPercent);
+        Assert.Null(reading.DeltaPercent);
+    }
+
+    [Fact]
+    public void Pace_accepts_the_exact_lower_arithmetic_boundary()
+    {
+        var reset = DateTimeOffset.MinValue.AddHours(5);
+        var reading = UsagePace.Evaluate(
+            CreateWindow(50, TimeSpan.FromHours(5), reset),
+            DateTimeOffset.MinValue.AddHours(2.5));
+
+        Assert.Equal(PaceState.OnPace, reading.State);
+        Assert.Equal(50, reading.ElapsedPercent);
+    }
+
+    [Theory]
+    [InlineData(double.NaN)]
+    [InlineData(double.PositiveInfinity)]
+    [InlineData(double.NegativeInfinity)]
+    public void Constructor_normalizes_non_finite_percentages(double supplied)
+    {
+        var window = CreateWindow(supplied, null, null);
+
+        Assert.Equal(0, window.UsedPercent);
+        Assert.Equal(100, window.RemainingPercent);
+    }
+
     private static UsageWindow CreateWindow(double used, TimeSpan? duration, DateTimeOffset? reset) =>
         new("five_hour", "5-hour", used, duration, reset);
 }

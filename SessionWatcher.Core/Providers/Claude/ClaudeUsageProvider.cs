@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Headers;
+using System.Text;
 using SessionWatcher.Core.Models;
 
 namespace SessionWatcher.Core.Providers.Claude;
@@ -7,9 +8,17 @@ namespace SessionWatcher.Core.Providers.Claude;
 public sealed class ClaudeUsageProvider(
     IClaudeCredentialReader credentialReader,
     HttpClient httpClient,
-    TimeProvider timeProvider) : IUsageProvider
+    TimeProvider timeProvider,
+    int maxResponseBytes = 256 * 1024,
+    TimeSpan? bodyReadTimeout = null) : IUsageProvider
 {
     private static readonly Uri UsageEndpoint = new("https://api.anthropic.com/api/oauth/usage");
+    private static readonly TimeSpan DefaultBodyReadTimeout = TimeSpan.FromSeconds(12);
+    private readonly int _maxResponseBytes = Math.Clamp(maxResponseBytes, 32, 4 * 1024 * 1024);
+    private readonly TimeSpan _bodyReadTimeout =
+        bodyReadTimeout is { } timeout && timeout > TimeSpan.Zero
+            ? timeout
+            : DefaultBodyReadTimeout;
 
     public string Id => "claude";
 
@@ -33,7 +42,7 @@ public sealed class ClaudeUsageProvider(
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
             request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             request.Headers.TryAddWithoutValidation("anthropic-beta", "oauth-2025-04-20");
-            request.Headers.UserAgent.ParseAdd("sessionwatcher-windows/0.1");
+            request.Headers.UserAgent.ParseAdd("quotabeacon-windows/0.2");
 
             using var response = await httpClient.SendAsync(
                 request,
@@ -53,7 +62,7 @@ public sealed class ClaudeUsageProvider(
                 return ErrorSnapshot(
                     observedAt,
                     SnapshotStatus.Error,
-                    "Claude temporarily limited usage checks. SessionWatcher will retry.");
+                    "Claude temporarily limited usage checks. QuotaBeacon will retry.");
             }
 
             if (!response.IsSuccessStatusCode)
@@ -64,7 +73,7 @@ public sealed class ClaudeUsageProvider(
                     "Claude usage is temporarily unavailable.");
             }
 
-            var json = await response.Content.ReadAsStringAsync(cancellationToken);
+            var json = await ReadBoundedBodyAsync(response.Content, cancellationToken);
             return ClaudeUsageParser.Parse(json, observedAt);
         }
         catch (OperationCanceledException)
@@ -87,6 +96,51 @@ public sealed class ClaudeUsageProvider(
             return ErrorSnapshot(observedAt, SnapshotStatus.Error, "Claude usage is temporarily unavailable.");
         }
     }
+
+    private async Task<string> ReadBoundedBodyAsync(
+        HttpContent content,
+        CancellationToken cancellationToken)
+    {
+        if (content.Headers.ContentLength is { } contentLength &&
+            contentLength > _maxResponseBytes)
+        {
+            throw UnreadableResponse();
+        }
+
+        using var bodyCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        bodyCancellation.CancelAfter(_bodyReadTimeout);
+
+        try
+        {
+            await using var input = await content.ReadAsStreamAsync(bodyCancellation.Token);
+            using var output = new MemoryStream(Math.Min(_maxResponseBytes, 16 * 1024));
+            var buffer = new byte[8 * 1024];
+            while (true)
+            {
+                var read = await input.ReadAsync(buffer.AsMemory(), bodyCancellation.Token);
+                if (read == 0)
+                {
+                    break;
+                }
+
+                if (output.Length + read > _maxResponseBytes)
+                {
+                    throw UnreadableResponse();
+                }
+
+                await output.WriteAsync(buffer.AsMemory(0, read), bodyCancellation.Token);
+            }
+
+            return Encoding.UTF8.GetString(output.GetBuffer(), 0, checked((int)output.Length));
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            throw UnreadableResponse();
+        }
+    }
+
+    private static ProviderDataException UnreadableResponse() =>
+        new("Claude returned an unreadable usage response.");
 
     private static ProviderSnapshot ErrorSnapshot(
         DateTimeOffset observedAt,

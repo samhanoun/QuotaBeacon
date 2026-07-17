@@ -15,7 +15,7 @@
 5. As a plugin author, I want to return a provider-neutral usage snapshot, so a
    new tool can use the same dashboard, history, alerts, and tray surfaces.
 
-## SessionWatcher reference scope
+## QuotaBeacon reference scope
 
 The macOS reference product advertises:
 
@@ -65,12 +65,12 @@ fallback must be labeled local and may be stale.
 Read the Claude Code OAuth access token from its existing credentials file,
 honoring `CLAUDE_CONFIG_DIR`, and send it only to
 `https://api.anthropic.com/api/oauth/usage`. The token is never persisted by
-SessionWatcher or logged. Parse quota objects dynamically so newly introduced
+QuotaBeacon or logged. Parse quota objects dynamically so newly introduced
 model-scoped windows are visible without a release.
 
 Claude's official status-line and `/usage` surfaces remain the user-verifiable
 reference. Authentication errors should instruct the user to run Claude's
-normal login flow; SessionWatcher does not alter credentials.
+normal login flow; QuotaBeacon does not alter credentials.
 
 ## Neutral usage model
 
@@ -91,7 +91,7 @@ elapsed-window percentage, pace delta, and reset countdown.
 - No prompt, response, tool-call, file-content, or source-code collection.
 - Local analytics parse only Codex model names and per-turn token counters;
   unrelated session records are skipped before JSON parsing.
-- No telemetry and no SessionWatcher service.
+- No telemetry and no QuotaBeacon service.
 - Network allowlist in built-in providers: Anthropic usage endpoint only;
   Codex networking is delegated to the installed official app-server.
 - OAuth values are never included in exceptions, logs, history, or UI.

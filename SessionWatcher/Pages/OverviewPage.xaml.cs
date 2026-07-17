@@ -12,7 +12,10 @@ public sealed partial class OverviewPage : Page
         SizeChanged += OnPageSizeChanged;
     }
 
+    // WinUI XAML binds to this instance property.
+#pragma warning disable CA1822
     public DashboardViewModel ViewModel => App.Current.ViewModel;
+#pragma warning restore CA1822
 
     private async void OnRefreshClicked(object sender, RoutedEventArgs args) =>
         await ViewModel.RefreshAsync(CancellationToken.None);

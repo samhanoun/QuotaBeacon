@@ -1,5 +1,6 @@
 using SessionWatcher.Core.Models;
 using SessionWatcher.Core.Providers.Claude;
+using System.Text.Json;
 
 namespace SessionWatcher.Core.Tests;
 
@@ -79,5 +80,69 @@ public sealed class ClaudeUsageParserTests
         var exception = Assert.Throws<ProviderDataException>(() => ClaudeUsageParser.Parse("{broken", ObservedAt));
 
         Assert.Equal("Claude returned an unreadable usage response.", exception.Message);
+    }
+
+    [Theory]
+    [InlineData(32, true)]
+    [InlineData(33, false)]
+    public void Parse_enforces_a_combined_window_budget(int count, bool accepted)
+    {
+        var json = JsonSerializer.Serialize(
+            Enumerable.Range(0, count)
+                .ToDictionary(index => $"window_{index}", _ => new { utilization = 1 }));
+
+        if (!accepted)
+        {
+            var exception = Assert.Throws<ProviderDataException>(
+                () => ClaudeUsageParser.Parse(json, ObservedAt));
+            Assert.Equal("Claude returned an unreadable usage response.", exception.Message);
+            return;
+        }
+
+        var snapshot = ClaudeUsageParser.Parse(json, ObservedAt);
+
+        Assert.Equal(count, snapshot.Windows.Count);
+    }
+
+    [Fact]
+    public void Parse_rejects_overlong_provider_model_names()
+    {
+        var json = JsonSerializer.Serialize(new
+        {
+            limits = new[]
+            {
+                new
+                {
+                    group = "weekly_models",
+                    percent = 12,
+                    scope = new { model = new { display_name = new string('a', 257) } }
+                }
+            }
+        });
+
+        var exception = Assert.Throws<ProviderDataException>(
+            () => ClaudeUsageParser.Parse(json, ObservedAt));
+
+        Assert.Equal("Claude returned an unreadable usage response.", exception.Message);
+    }
+
+    [Fact]
+    public void Parse_preserves_slug_semantics_with_bounded_linear_normalization()
+    {
+        const string json = """
+        {
+          "limits": [
+            {
+              "group": "weekly_models",
+              "percent": 12,
+              "scope": { "model": { "display_name": "  Opus--4.1  " } }
+            }
+          ]
+        }
+        """;
+
+        var window = Assert.Single(ClaudeUsageParser.Parse(json, ObservedAt).Windows);
+
+        Assert.Equal("seven_day_opus_4_1", window.Key);
     }
 }

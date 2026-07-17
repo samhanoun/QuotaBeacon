@@ -6,7 +6,7 @@ using Windows.Graphics;
 
 namespace SessionWatcher;
 
-public sealed partial class MainWindow : Window
+public sealed partial class MainWindow : Window, IDisposable
 {
     private readonly TrayIconService _trayIcon;
     private bool _exitRequested;
@@ -82,4 +82,6 @@ public sealed partial class MainWindow : Window
         _trayIcon.Dispose();
         App.Current.Runtime.Dispose();
     }
+
+    public void Dispose() => DisposeServices();
 }

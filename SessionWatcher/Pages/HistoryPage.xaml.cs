@@ -12,7 +12,10 @@ public sealed partial class HistoryPage : Page
         Loaded += OnLoaded;
     }
 
+    // WinUI XAML binds to this instance property.
+#pragma warning disable CA1822
     public DashboardViewModel ViewModel => App.Current.ViewModel;
+#pragma warning restore CA1822
 
     private async void OnLoaded(object sender, RoutedEventArgs args) =>
         await ViewModel.LoadHistoryAsync(CancellationToken.None);

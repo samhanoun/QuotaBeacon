@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Build, test, and audit
+    runs-on: windows-latest
+    timeout-minutes: 30
+    env:
+      CI: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: 1
+      DOTNET_NOLOGO: true
+    steps:
+      - name: Check out source
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Install pinned .NET SDK
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+          cache: true
+          cache-dependency-path: '**/packages.lock.json'
+
+      - name: Restore locked dependencies and audit NuGet packages
+        run: >-
+          dotnet restore SessionWatcher.slnx --locked-mode
+          -p:NuGetAudit=true -p:NuGetAuditMode=all
+
+      - name: Verify formatting
+        run: dotnet format SessionWatcher.slnx --no-restore --verify-no-changes
+
+      - name: Build release with warnings as errors
+        run: dotnet build SessionWatcher.slnx -c Release --no-restore
+
+      - name: Run tests and collect coverage
+        run: >-
+          dotnet test SessionWatcher.Core.Tests/SessionWatcher.Core.Tests.csproj
+          -c Release --no-build --no-restore
+          --collect:"XPlat Code Coverage"
+          --settings coverlet.runsettings
+          --results-directory artifacts/test-results
+          --logger "trx;LogFileName=core-tests.trx"
+
+      - name: Enforce 80% core line coverage
+        shell: pwsh
+        run: |
+          $coverageFile = Get-ChildItem artifacts/test-results -Recurse -Filter coverage.cobertura.xml |
+            Select-Object -First 1
+          if (-not $coverageFile) {
+            throw 'Coverage report was not generated.'
+          }
+
+          [xml]$coverage = Get-Content -Raw $coverageFile.FullName
+          $rate = [double]::Parse(
+            [string]$coverage.coverage.'line-rate',
+            [Globalization.CultureInfo]::InvariantCulture)
+          $percent = [Math]::Round($rate * 100, 2)
+          "### Core line coverage: $percent%" | Add-Content $env:GITHUB_STEP_SUMMARY
+          if ($rate -lt 0.80) {
+            throw "Core line coverage is $percent%; the minimum is 80%."
+          }
+
+      - name: Upload test and coverage reports
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: test-results
+          path: artifacts/test-results
+          if-no-files-found: error
+          retention-days: 14

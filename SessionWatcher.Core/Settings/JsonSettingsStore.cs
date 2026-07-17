@@ -2,7 +2,10 @@ using System.Text.Json;
 
 namespace SessionWatcher.Core.Settings;
 
+// The app-lifetime semaphore may still be awaited during shutdown; disposing it would race those operations.
+#pragma warning disable CA1001
 public sealed class JsonSettingsStore(string path) : ISettingsStore
+#pragma warning restore CA1001
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {

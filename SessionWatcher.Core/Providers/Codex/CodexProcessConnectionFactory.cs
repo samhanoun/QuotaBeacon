@@ -71,6 +71,7 @@ public sealed class CodexProcessConnectionFactory(string? executablePath = null)
         var candidates = new[]
         {
             configuredPath,
+            Environment.GetEnvironmentVariable("QUOTABEACON_CODEX_PATH"),
             Environment.GetEnvironmentVariable("SESSIONWATCHER_CODEX_PATH"),
             Environment.GetEnvironmentVariable("CODEX_CLI_PATH")
         };

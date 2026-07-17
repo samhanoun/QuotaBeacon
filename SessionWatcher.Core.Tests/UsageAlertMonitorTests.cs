@@ -45,11 +45,25 @@ public sealed class UsageAlertMonitorTests
         Assert.Equal("Codex 5-hour usage reset.", alert.Message);
     }
 
-    private static ProviderSnapshot Snapshot(double used) => new(
+    [Fact]
+    public void Monitor_evicts_windows_that_disappear_from_a_provider_snapshot()
+    {
+        var monitor = new UsageAlertMonitor();
+        _ = monitor.Observe(Snapshot("session", 79));
+        _ = monitor.Observe(Snapshot("weekly", 10));
+
+        var alerts = monitor.Observe(Snapshot("session", 80));
+
+        Assert.Empty(alerts);
+    }
+
+    private static ProviderSnapshot Snapshot(double used) => Snapshot("session", used);
+
+    private static ProviderSnapshot Snapshot(string key, double used) => new(
         "codex",
         "Codex",
         Now,
         SnapshotSource.Live,
         SnapshotStatus.Available,
-        [new UsageWindow("session", "5-hour", used, TimeSpan.FromHours(5), Now.AddHours(2))]);
+        [new UsageWindow(key, "5-hour", used, TimeSpan.FromHours(5), Now.AddHours(2))]);
 }

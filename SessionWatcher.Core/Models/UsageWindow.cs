@@ -14,7 +14,7 @@ public sealed record UsageWindow
 
         Key = key;
         Label = label;
-        UsedPercent = Math.Clamp(usedPercent, 0, 100);
+        UsedPercent = double.IsFinite(usedPercent) ? Math.Clamp(usedPercent, 0, 100) : 0;
         Duration = duration;
         ResetsAt = resetsAt;
     }

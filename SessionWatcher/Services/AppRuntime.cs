@@ -14,13 +14,16 @@ namespace SessionWatcher.Services;
 public sealed class AppRuntime : IDisposable
 {
     private readonly HttpClient _claudeClient;
-    private readonly ISettingsStore _settingsStore;
+    private readonly JsonSettingsStore _settingsStore;
 
     public AppRuntime()
     {
-        DataDirectory = Path.Combine(
-            Windows.Storage.ApplicationData.Current.LocalFolder.Path,
-            "SessionWatcher");
+        var localState = Windows.Storage.ApplicationData.Current.LocalFolder.Path;
+        var preferredDataDirectory = Path.Combine(localState, "QuotaBeacon");
+        var legacyDataDirectory = Path.Combine(localState, "SessionWatcher");
+        DataDirectory = Directory.Exists(preferredDataDirectory) || !Directory.Exists(legacyDataDirectory)
+            ? preferredDataDirectory
+            : legacyDataDirectory;
         PluginDirectory = Path.Combine(DataDirectory, "plugins");
         Directory.CreateDirectory(DataDirectory);
         Directory.CreateDirectory(PluginDirectory);
@@ -89,5 +92,8 @@ public sealed class AppRuntime : IDisposable
         SettingsChanged?.Invoke(this, EventArgs.Empty);
     }
 
-    public void Dispose() => _claudeClient.Dispose();
+    public void Dispose()
+    {
+        _claudeClient.Dispose();
+    }
 }

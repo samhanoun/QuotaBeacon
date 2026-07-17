@@ -11,6 +11,8 @@ public sealed partial class PluginsPage : Page
         InitializeComponent();
     }
 
+    // These properties stay instance-based because WinUI XAML resolves them from the page data context.
+#pragma warning disable CA1822
     public string PluginDirectory => App.Current.Runtime.PluginDirectory;
 
     public string ProviderSummary => string.Join(
@@ -28,6 +30,7 @@ public sealed partial class PluginsPage : Page
         : string.Join(
             Environment.NewLine,
             App.Current.Runtime.Catalog.Plugins.Select(plugin => $"{plugin.DisplayName} ({plugin.FileName})"));
+#pragma warning restore CA1822
 
     private void OnOpenFolderClicked(object sender, RoutedEventArgs args)
     {

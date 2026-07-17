@@ -6,8 +6,8 @@ param(
 $ErrorActionPreference = "Stop"
 $repository = Split-Path -Parent $PSScriptRoot
 
-if (Get-Process SessionWatcher -ErrorAction SilentlyContinue) {
-    throw "Close SessionWatcher before running the smoke test."
+if (Get-Process QuotaBeacon -ErrorAction SilentlyContinue) {
+    throw "Close QuotaBeacon before running the smoke test."
 }
 
 Add-Type -AssemblyName UIAutomationClient
@@ -32,13 +32,13 @@ try {
     $deadline = (Get-Date).AddSeconds(30)
     do {
         Start-Sleep -Milliseconds 250
-        $application = Get-Process SessionWatcher -ErrorAction SilentlyContinue |
+        $application = Get-Process QuotaBeacon -ErrorAction SilentlyContinue |
             Where-Object { $_.MainWindowHandle -ne 0 } |
             Select-Object -First 1
     } until ($application -or (Get-Date) -gt $deadline)
 
     if (-not $application) {
-        throw "SessionWatcher did not open a top-level window within 30 seconds."
+        throw "QuotaBeacon did not open a top-level window within 30 seconds."
     }
 
     $requiredNames = @(
@@ -74,11 +74,11 @@ try {
         Where-Object { $_.InstallLocation -like "*$repository*" } |
         Select-Object -First 1
     if (-not $package) {
-        throw "The SessionWatcher debug package identity was not registered."
+        throw "The QuotaBeacon debug package identity was not registered."
     }
 
     $dataRoot = Join-Path $env:LOCALAPPDATA (
-        "Packages\{0}\LocalState\SessionWatcher" -f $package.PackageFamilyName)
+        "Packages\{0}\LocalState\QuotaBeacon" -f $package.PackageFamilyName)
     $historyPath = Join-Path $dataRoot "history.json"
     $deadline = (Get-Date).AddSeconds(20)
     while (-not (Test-Path -LiteralPath $historyPath) -and (Get-Date) -lt $deadline) {

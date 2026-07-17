@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using SessionWatcher.Core.Settings;
@@ -18,7 +19,8 @@ public sealed partial class SettingsPage : Page
         var settings = App.Current.Runtime.CurrentSettings;
         RefreshIntervalCombo.SelectedItem = RefreshIntervalCombo.Items
             .OfType<ComboBoxItem>()
-            .First(item => item.Tag?.ToString() == settings.RefreshIntervalMinutes.ToString());
+            .First(item => item.Tag?.ToString() ==
+                           settings.RefreshIntervalMinutes.ToString(CultureInfo.InvariantCulture));
         StartWithWindowsToggle.IsOn = settings.StartWithWindows;
         MinimizeToTrayToggle.IsOn = settings.MinimizeToTray;
     }
@@ -29,7 +31,7 @@ public sealed partial class SettingsPage : Page
         try
         {
             var selected = (ComboBoxItem)RefreshIntervalCombo.SelectedItem;
-            var interval = int.Parse(selected.Tag!.ToString()!);
+            var interval = int.Parse(selected.Tag!.ToString()!, CultureInfo.InvariantCulture);
             StartupRegistrationService.SetEnabled(StartWithWindowsToggle.IsOn);
             await App.Current.Runtime.SaveSettingsAsync(
                 new AppSettings(

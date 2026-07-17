@@ -31,6 +31,26 @@ public sealed class UsageCoordinatorTests
         Assert.Equal("claude", history.Snapshots[0].ProviderId);
     }
 
+    [Fact]
+    public async Task Refresh_isolates_provider_internal_cancellation()
+    {
+        var now = new DateTimeOffset(2026, 7, 16, 12, 0, 0, TimeSpan.Zero);
+        var history = new RecordingHistoryStore();
+        var providers = new IUsageProvider[]
+        {
+            new StubProvider("claude", "Claude", () => throw new OperationCanceledException()),
+            new StubProvider("codex", "Codex", () => Snapshot("codex", "Codex", now))
+        };
+        var coordinator = new UsageCoordinator(providers, history, new FixedTimeProvider(now));
+
+        var results = await coordinator.RefreshAsync(CancellationToken.None);
+
+        Assert.Equal(SnapshotStatus.Error, results.Single(result => result.ProviderId == "claude").Status);
+        Assert.Equal(SnapshotStatus.Available, results.Single(result => result.ProviderId == "codex").Status);
+        Assert.Single(history.Snapshots);
+        Assert.Equal("codex", history.Snapshots[0].ProviderId);
+    }
+
     private static ProviderSnapshot Snapshot(string id, string name, DateTimeOffset observedAt) => new(
         id,
         name,

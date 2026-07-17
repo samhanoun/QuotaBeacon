@@ -44,7 +44,7 @@ public static class ProviderCatalog
                 {
                     loadIssues.Add(new PluginLoadIssue(
                         Path.GetFileName(path),
-                        "The assembly does not contain a SessionWatcher provider plugin."));
+                        "The assembly does not contain a QuotaBeacon provider plugin."));
                     continue;
                 }
 

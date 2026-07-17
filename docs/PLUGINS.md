@@ -1,13 +1,13 @@
 # Provider plugins
 
-SessionWatcher loads trusted `.dll` files from the folder shown on its Plugins
-page at startup. Plugins run inside the SessionWatcher process with the same
+QuotaBeacon loads trusted `.dll` files from the folder shown on its Plugins
+page at startup. Plugins run inside the QuotaBeacon process with the same
 permissions as the current user. Install only assemblies you have audited or
 received from a publisher you trust.
 
 ## Contract
 
-A plugin references `SessionWatcher.Core` and exposes a public, non-abstract
+A plugin references the compatibility assembly `SessionWatcher.Core` and exposes a public, non-abstract
 type with a parameterless constructor that implements `IUsageProviderPlugin`:
 
 ```csharp
@@ -27,7 +27,7 @@ public sealed class ExamplePlugin : IUsageProviderPlugin
 Each `IUsageProvider` has a stable ID, display name, and asynchronous snapshot
 method. A snapshot reports its provenance (`Live`, `LocalFallback`, or `Cache`),
 status, observed time, optional plan label, and independent quota windows.
-SessionWatcher owns reset countdowns, pace calculations, history, alerts, and
+QuotaBeacon owns reset countdowns, pace calculations, history, alerts, and
 dashboard rendering.
 
 Provider diagnostics must be safe for display and persistence boundaries:
@@ -42,7 +42,7 @@ one provider failure from all other providers.
 - Target .NET 10 and reference the same `SessionWatcher.Core` contract version.
 - Prefer a single plugin assembly. If dependencies are required, keep their
   versions private and test loading from a clean plugin folder.
-- Copy the plugin DLL into the in-app plugin folder and restart SessionWatcher.
+- Copy the plugin DLL into the in-app plugin folder and restart QuotaBeacon.
 - Plugin and provider IDs are case-insensitively unique. Conflicts are rejected
   and shown as load issues; built-in providers always win.
 - Removing a DLL also requires an app restart.

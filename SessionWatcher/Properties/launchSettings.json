@@ -1,9 +1,9 @@
 {
   "profiles": {
-    "SessionWatcher (Package)": {
+    "QuotaBeacon (Package)": {
       "commandName": "MsixPackage"
     },
-    "SessionWatcher (Unpackaged)": {
+    "QuotaBeacon (Unpackaged)": {
       "commandName": "Project"
     }
   }

@@ -94,7 +94,7 @@ public sealed class CodexAppServerSource(
             clientInfo = new
             {
                 name = "session_watcher_windows",
-                title = "SessionWatcher for Windows",
+                title = "QuotaBeacon for Windows",
                 version = "0.1.0"
             }
         }

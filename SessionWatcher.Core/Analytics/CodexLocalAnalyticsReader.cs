@@ -1,4 +1,5 @@
 using System.Text.Json;
+using SessionWatcher.Core.IO;
 
 namespace SessionWatcher.Core.Analytics;
 
@@ -6,17 +7,29 @@ public sealed class CodexLocalAnalyticsReader : ILocalAnalyticsReader
 {
     private const int DefaultDays = 30;
     private const int DefaultMaxFiles = 256;
+    private const int DefaultMaxDiscoveryEntries = 10_000;
+    private const int DefaultMaxBytesPerFile = 4 * 1024 * 1024;
+    private const int DefaultMaxTotalBytes = 64 * 1024 * 1024;
+    private const int DefaultMaxLineChars = 256 * 1024;
 
     private readonly string _sessionsDirectory;
     private readonly TimeProvider _timeProvider;
     private readonly int _days;
     private readonly int _maxFiles;
+    private readonly int _maxDiscoveryEntries;
+    private readonly int _maxBytesPerFile;
+    private readonly int _maxTotalBytes;
+    private readonly int _maxLineChars;
 
     public CodexLocalAnalyticsReader(
         string? codexHome,
         TimeProvider timeProvider,
         int days = DefaultDays,
-        int maxFiles = DefaultMaxFiles)
+        int maxFiles = DefaultMaxFiles,
+        int maxDiscoveryEntries = DefaultMaxDiscoveryEntries,
+        int maxBytesPerFile = DefaultMaxBytesPerFile,
+        int maxTotalBytes = DefaultMaxTotalBytes,
+        int maxLineChars = DefaultMaxLineChars)
     {
         var home = codexHome;
         if (string.IsNullOrWhiteSpace(home))
@@ -35,6 +48,10 @@ public sealed class CodexLocalAnalyticsReader : ILocalAnalyticsReader
         _timeProvider = timeProvider;
         _days = Math.Clamp(days, 1, 90);
         _maxFiles = Math.Clamp(maxFiles, 1, 2_000);
+        _maxDiscoveryEntries = Math.Clamp(maxDiscoveryEntries, _maxFiles, 100_000);
+        _maxBytesPerFile = Math.Clamp(maxBytesPerFile, 1024, 16 * 1024 * 1024);
+        _maxTotalBytes = Math.Clamp(maxTotalBytes, _maxBytesPerFile, 256 * 1024 * 1024);
+        _maxLineChars = Math.Clamp(maxLineChars, 128, 1024 * 1024);
     }
 
     public async Task<CodexLocalAnalyticsSnapshot> ReadAsync(CancellationToken cancellationToken)
@@ -52,46 +69,57 @@ public sealed class CodexLocalAnalyticsReader : ILocalAnalyticsReader
             return CreateSnapshot(observedAt, today, daily, models, total);
         }
 
-        FileInfo[] files;
+        IReadOnlyList<FileInfo> files;
         try
         {
-            files = Directory
-                .EnumerateFiles(_sessionsDirectory, "*.jsonl", SearchOption.AllDirectories)
-                .Select(path => new FileInfo(path))
-                .OrderByDescending(file => file.LastWriteTimeUtc)
-                .Take(_maxFiles)
-                .ToArray();
+            files = NewestFileSelector.FindNewest(
+                _sessionsDirectory,
+                ".jsonl",
+                _maxFiles,
+                _maxDiscoveryEntries,
+                oldestFirst: false,
+                cancellationToken);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
             return CreateSnapshot(observedAt, today, daily, models, total);
         }
 
+        var remainingBytes = (long)_maxTotalBytes;
         foreach (var file in files)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            await ReadFileAsync(
+            if (remainingBytes <= 0)
+            {
+                break;
+            }
+
+            var fileBudget = (int)Math.Min(remainingBytes, _maxBytesPerFile);
+            remainingBytes -= await ReadFileAsync(
                 file.FullName,
                 firstDay,
                 today,
                 daily,
                 models,
                 total,
+                fileBudget,
                 cancellationToken);
         }
 
         return CreateSnapshot(observedAt, today, daily, models, total);
     }
 
-    private async Task ReadFileAsync(
+    private async Task<long> ReadFileAsync(
         string path,
         DateOnly firstDay,
         DateOnly lastDay,
         Dictionary<DateOnly, UsageAccumulator> daily,
         Dictionary<string, UsageAccumulator> models,
         UsageAccumulator total,
+        int maxBytes,
         CancellationToken cancellationToken)
     {
+        long consumedBytes = 0;
         try
         {
             await using var stream = new FileStream(
@@ -101,11 +129,30 @@ public sealed class CodexLocalAnalyticsReader : ILocalAnalyticsReader
                 FileShare.ReadWrite | FileShare.Delete,
                 bufferSize: 16_384,
                 useAsync: true);
+            consumedBytes = Math.Min(stream.Length, maxBytes);
+            var offset = Math.Max(0, stream.Length - consumedBytes);
+            var skipPartialLine = false;
+            if (offset > 0)
+            {
+                stream.Seek(offset - 1, SeekOrigin.Begin);
+                skipPartialLine = stream.ReadByte() != '\n';
+            }
+
+            stream.Seek(offset, SeekOrigin.Begin);
             using var reader = new StreamReader(stream);
             var currentModel = "Unknown model";
 
-            while (await reader.ReadLineAsync(cancellationToken) is { } line)
+            await foreach (var line in BoundedLineReader.ReadLinesAsync(
+                               reader,
+                               _maxLineChars,
+                               cancellationToken))
             {
+                if (skipPartialLine)
+                {
+                    skipPartialLine = false;
+                    continue;
+                }
+
                 if (!line.Contains("token_count", StringComparison.Ordinal) &&
                     !line.Contains("turn_context", StringComparison.Ordinal))
                 {
@@ -212,9 +259,11 @@ public sealed class CodexLocalAnalyticsReader : ILocalAnalyticsReader
         {
             // One unreadable session must not hide analytics from all other sessions.
         }
+
+        return consumedBytes;
     }
 
-    private CodexLocalAnalyticsSnapshot CreateSnapshot(
+    private static CodexLocalAnalyticsSnapshot CreateSnapshot(
         DateTimeOffset observedAt,
         DateOnly today,
         IReadOnlyDictionary<DateOnly, UsageAccumulator> daily,

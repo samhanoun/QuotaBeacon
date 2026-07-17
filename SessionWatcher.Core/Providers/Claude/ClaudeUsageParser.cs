@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text;
 using System.Text.Json;
 using SessionWatcher.Core.Models;
 
@@ -6,6 +7,10 @@ namespace SessionWatcher.Core.Providers.Claude;
 
 public static class ClaudeUsageParser
 {
+    private const int MaxUsageWindows = 32;
+    private const int MaxProviderTextLength = 256;
+    private const int MaxModelNameLength = 192;
+
     public static ProviderSnapshot Parse(string json, DateTimeOffset observedAt)
     {
         try
@@ -17,6 +22,7 @@ public static class ClaudeUsageParser
             }
 
             var windows = new List<UsageWindow>();
+            var keys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             foreach (var property in document.RootElement.EnumerateObject())
             {
@@ -27,15 +33,17 @@ public static class ClaudeUsageParser
                     continue;
                 }
 
-                windows.Add(new UsageWindow(
+                AddWindow(
+                    windows,
+                    keys,
                     property.Name,
                     LabelFor(property.Name),
                     utilization,
                     DurationFor(property.Name),
-                    ReadReset(property.Value)));
+                    ReadReset(property.Value));
             }
 
-            AppendScopedLimits(document.RootElement, windows);
+            AppendScopedLimits(document.RootElement, windows, keys);
 
             return new ProviderSnapshot(
                 "claude",
@@ -55,7 +63,10 @@ public static class ClaudeUsageParser
         }
     }
 
-    private static void AppendScopedLimits(JsonElement root, List<UsageWindow> windows)
+    private static void AppendScopedLimits(
+        JsonElement root,
+        List<UsageWindow> windows,
+        HashSet<string> keys)
     {
         if (!root.TryGetProperty("limits", out var limits) || limits.ValueKind != JsonValueKind.Array)
         {
@@ -76,6 +87,7 @@ public static class ClaudeUsageParser
             if (prefix is null && limit.TryGetProperty("group", out var groupElement))
             {
                 var group = groupElement.GetString() ?? string.Empty;
+                EnsureProviderTextIsBounded(group);
                 prefix = group.Contains("week", StringComparison.OrdinalIgnoreCase)
                     ? "seven_day"
                     : group.Contains("five", StringComparison.OrdinalIgnoreCase)
@@ -85,18 +97,40 @@ public static class ClaudeUsageParser
 
             prefix ??= "limit";
             var key = $"{prefix}_{Slug(modelName)}";
-            if (windows.Any(window => string.Equals(window.Key, key, StringComparison.OrdinalIgnoreCase)))
-            {
-                continue;
-            }
 
-            windows.Add(new UsageWindow(
+            AddWindow(
+                windows,
+                keys,
                 key,
-                $"{LabelFor(prefix)} · {modelName}",
+                $"{LabelFor(prefix)} \u00B7 {modelName}",
                 percent,
                 DurationFor(prefix),
-                reset));
+                reset);
         }
+    }
+
+    private static void AddWindow(
+        List<UsageWindow> windows,
+        HashSet<string> keys,
+        string key,
+        string label,
+        double usedPercent,
+        TimeSpan? duration,
+        DateTimeOffset? resetsAt)
+    {
+        EnsureProviderTextIsBounded(key);
+        EnsureProviderTextIsBounded(label);
+        if (!keys.Add(key))
+        {
+            return;
+        }
+
+        if (windows.Count >= MaxUsageWindows)
+        {
+            throw UnreadableResponse();
+        }
+
+        windows.Add(new UsageWindow(key, label, usedPercent, duration, resetsAt));
     }
 
     private static bool TryReadModelName(JsonElement limit, out string modelName)
@@ -113,6 +147,11 @@ public static class ClaudeUsageParser
         }
 
         modelName = displayName.GetString() ?? string.Empty;
+        if (modelName.Length > MaxModelNameLength)
+        {
+            throw UnreadableResponse();
+        }
+
         return !string.IsNullOrWhiteSpace(modelName);
     }
 
@@ -191,25 +230,39 @@ public static class ClaudeUsageParser
         return CultureInfo.InvariantCulture.TextInfo.ToTitleCase(key.Replace('_', ' '));
     }
 
-    private static string Slug(string value) => string.Join(
-        '_',
-        value.ToLowerInvariant()
-            .Select(character => char.IsLetterOrDigit(character) ? character : ' ')
-            .Aggregate(new List<string> { string.Empty }, (parts, character) =>
+    private static string Slug(string value)
+    {
+        var builder = new StringBuilder(Math.Min(value.Length, MaxProviderTextLength));
+        var separatorPending = false;
+        foreach (var character in value.ToLowerInvariant())
+        {
+            if (char.IsLetterOrDigit(character))
             {
-                if (character == ' ')
+                if (separatorPending && builder.Length > 0)
                 {
-                    if (parts[^1].Length > 0)
-                    {
-                        parts.Add(string.Empty);
-                    }
-                }
-                else
-                {
-                    parts[^1] += character;
+                    builder.Append('_');
                 }
 
-                return parts;
-            })
-            .Where(part => part.Length > 0));
+                builder.Append(character);
+                separatorPending = false;
+            }
+            else if (builder.Length > 0)
+            {
+                separatorPending = true;
+            }
+        }
+
+        return builder.ToString();
+    }
+
+    private static void EnsureProviderTextIsBounded(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value) || value.Length > MaxProviderTextLength)
+        {
+            throw UnreadableResponse();
+        }
+    }
+
+    private static ProviderDataException UnreadableResponse() =>
+        new("Claude returned an unreadable usage response.");
 }

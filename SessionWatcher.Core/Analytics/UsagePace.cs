@@ -22,7 +22,8 @@ public static class UsagePace
     {
         if (window.Duration is not { } duration ||
             duration <= TimeSpan.Zero ||
-            window.ResetsAt is not { } resetsAt)
+            window.ResetsAt is not { } resetsAt ||
+            duration > resetsAt - DateTimeOffset.MinValue)
         {
             return new PaceReading(PaceState.Unknown, null, null);
         }

@@ -105,7 +105,7 @@ public static class AnalyticsProjector
             $"{cacheRate:0}%",
             FormatTokens(snapshot.Today.OutputTokens),
             FormatTokens(snapshot.Today.ReasoningOutputTokens),
-            snapshot.Models.FirstOrDefault()?.Model ?? "No model data",
+            snapshot.Models.Count > 0 ? snapshot.Models[0].Model : "No model data",
             $"{activeDays} active day{(activeDays == 1 ? string.Empty : "s")}",
             "* API-equivalent estimate from local metadata; not your Codex subscription bill.",
             activity,

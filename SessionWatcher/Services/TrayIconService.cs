@@ -21,7 +21,7 @@ public sealed class TrayIconService : IDisposable
         var iconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "AppIcon.ico");
         _ownedIcon = File.Exists(iconPath) ? new Icon(iconPath) : null;
         _menu = new Forms.ContextMenuStrip();
-        _menu.Items.Add("Open SessionWatcher", null, (_, _) => dispatcher.TryEnqueue(() => showWindow()));
+        _menu.Items.Add("Open QuotaBeacon", null, (_, _) => dispatcher.TryEnqueue(() => showWindow()));
         _menu.Items.Add("Refresh now", null, (_, _) => dispatcher.TryEnqueue(async () => await refresh()));
         _menu.Items.Add(new Forms.ToolStripSeparator());
         _menu.Items.Add("Exit", null, (_, _) => dispatcher.TryEnqueue(() => exit()));
@@ -29,7 +29,7 @@ public sealed class TrayIconService : IDisposable
         _notifyIcon = new Forms.NotifyIcon
         {
             Icon = _ownedIcon ?? SystemIcons.Application,
-            Text = "SessionWatcher · Waiting for usage",
+            Text = "QuotaBeacon · Waiting for usage",
             ContextMenuStrip = _menu,
             Visible = true
         };
@@ -56,7 +56,7 @@ public sealed class TrayIconService : IDisposable
         var text = string.Join(" · ", summary);
         if (string.IsNullOrWhiteSpace(text))
         {
-            text = "SessionWatcher · Usage unavailable";
+            text = "QuotaBeacon · Usage unavailable";
         }
 
         _notifyIcon.Text = text.Length <= 127 ? text : text[..127];
@@ -70,7 +70,7 @@ public sealed class TrayIconService : IDisposable
             UsageAlertSeverity.Critical or UsageAlertSeverity.Exhausted => Forms.ToolTipIcon.Error,
             _ => Forms.ToolTipIcon.Info
         };
-        _notifyIcon.ShowBalloonTip(5000, "SessionWatcher", alert.Message, icon);
+        _notifyIcon.ShowBalloonTip(5000, "QuotaBeacon", alert.Message, icon);
     }
 
     public void Dispose()

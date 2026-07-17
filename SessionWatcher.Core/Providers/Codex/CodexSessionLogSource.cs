@@ -1,3 +1,4 @@
+using SessionWatcher.Core.IO;
 using SessionWatcher.Core.Models;
 
 namespace SessionWatcher.Core.Providers.Codex;
@@ -6,17 +7,23 @@ public sealed class CodexSessionLogSource : ICodexUsageSource
 {
     private const int DefaultMaxFiles = 16;
     private const int DefaultMaxBytesPerFile = 2 * 1024 * 1024;
+    private const int DefaultMaxDiscoveryEntries = 10_000;
+    private const int DefaultMaxLineChars = 256 * 1024;
 
     private readonly string _sessionsDirectory;
     private readonly TimeProvider _timeProvider;
     private readonly int _maxFiles;
     private readonly int _maxBytesPerFile;
+    private readonly int _maxDiscoveryEntries;
+    private readonly int _maxLineChars;
 
     public CodexSessionLogSource(
         string? codexHome,
         TimeProvider timeProvider,
         int maxFiles = DefaultMaxFiles,
-        int maxBytesPerFile = DefaultMaxBytesPerFile)
+        int maxBytesPerFile = DefaultMaxBytesPerFile,
+        int maxDiscoveryEntries = DefaultMaxDiscoveryEntries,
+        int maxLineChars = DefaultMaxLineChars)
     {
         var home = codexHome;
         if (string.IsNullOrWhiteSpace(home))
@@ -33,8 +40,10 @@ public sealed class CodexSessionLogSource : ICodexUsageSource
 
         _sessionsDirectory = Path.Combine(home, "sessions");
         _timeProvider = timeProvider;
-        _maxFiles = Math.Max(maxFiles, 1);
-        _maxBytesPerFile = Math.Max(maxBytesPerFile, 1024);
+        _maxFiles = Math.Clamp(maxFiles, 1, 2_000);
+        _maxBytesPerFile = Math.Clamp(maxBytesPerFile, 1024, 16 * 1024 * 1024);
+        _maxDiscoveryEntries = Math.Clamp(maxDiscoveryEntries, _maxFiles, 100_000);
+        _maxLineChars = Math.Clamp(maxLineChars, 128, 1024 * 1024);
     }
 
     public async Task<ProviderSnapshot> ReadAsync(CancellationToken cancellationToken)
@@ -46,15 +55,15 @@ public sealed class CodexSessionLogSource : ICodexUsageSource
 
         try
         {
-            var files = Directory
-                .EnumerateFiles(_sessionsDirectory, "*.jsonl", SearchOption.AllDirectories)
-                .Select(path => new FileInfo(path))
-                .OrderByDescending(file => file.LastWriteTimeUtc)
-                .Take(_maxFiles)
-                .OrderBy(file => file.LastWriteTimeUtc)
-                .ToArray();
+            var files = NewestFileSelector.FindNewest(
+                _sessionsDirectory,
+                ".jsonl",
+                _maxFiles,
+                _maxDiscoveryEntries,
+                oldestFirst: true,
+                cancellationToken);
 
-            if (files.Length == 0)
+            if (files.Count == 0)
             {
                 throw MissingSnapshot();
             }
@@ -93,17 +102,28 @@ public sealed class CodexSessionLogSource : ICodexUsageSource
             bufferSize: 8192,
             useAsync: true);
         var offset = Math.Max(0, stream.Length - _maxBytesPerFile);
+        var skipPartialLine = false;
+        if (offset > 0)
+        {
+            stream.Seek(offset - 1, SeekOrigin.Begin);
+            skipPartialLine = stream.ReadByte() != '\n';
+        }
+
         stream.Seek(offset, SeekOrigin.Begin);
         using var reader = new StreamReader(stream);
 
-        if (offset > 0)
-        {
-            _ = await reader.ReadLineAsync(cancellationToken);
-        }
-
         var lines = new List<string>();
-        while (await reader.ReadLineAsync(cancellationToken) is { } line)
+        await foreach (var line in BoundedLineReader.ReadLinesAsync(
+                           reader,
+                           _maxLineChars,
+                           cancellationToken))
         {
+            if (skipPartialLine)
+            {
+                skipPartialLine = false;
+                continue;
+            }
+
             lines.Add(line);
         }
 

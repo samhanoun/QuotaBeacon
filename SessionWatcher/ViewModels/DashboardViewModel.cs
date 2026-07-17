@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using SessionWatcher.Core.Alerts;
 using SessionWatcher.Core.Analytics;
@@ -24,7 +25,10 @@ public sealed class DashboardRefreshEventArgs(
     public IReadOnlyList<UsageAlert> Alerts { get; } = alerts;
 }
 
+// The app-lifetime semaphore may still be awaited during shutdown; disposing it would race an active refresh.
+#pragma warning disable CA1001
 public sealed class DashboardViewModel(AppRuntime runtime) : INotifyPropertyChanged
+#pragma warning restore CA1001
 {
     private readonly SemaphoreSlim _refreshGate = new(1, 1);
     private bool _isRefreshing;
@@ -142,7 +146,7 @@ public sealed class DashboardViewModel(AppRuntime runtime) : INotifyPropertyChan
         {
             History.Add(new HistoryRowModel(
                 snapshot.ProviderName,
-                snapshot.ObservedAt.ToLocalTime().ToString("g"),
+                snapshot.ObservedAt.ToLocalTime().ToString("g", CultureInfo.CurrentCulture),
                 snapshot.Source switch
                 {
                     SnapshotSource.Live => "Live",
