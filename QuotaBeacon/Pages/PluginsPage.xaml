@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Page
+    x:Class="QuotaBeacon.Pages.PluginsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid Background="{ThemeResource DashboardPageBrush}">
+    <ScrollViewer>
+        <Grid MaxWidth="1040" Padding="28,24,28,40" HorizontalAlignment="Stretch">
+            <StackPanel Spacing="18">
+                <StackPanel Spacing="4">
+                    <TextBlock Style="{StaticResource EyebrowTextStyle}" Text="EXTENSIBILITY" />
+                    <TextBlock Style="{StaticResource PageTitleTextStyle}" Text="Plugins" />
+                    <TextBlock
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="Built-in providers and trusted external provider assemblies share one usage contract."
+                        TextWrapping="Wrap" />
+                </StackPanel>
+
+                <InfoBar
+                    IsClosable="False"
+                    IsOpen="True"
+                    Message="External plugin DLLs execute code in QuotaBeacon. Install plugins only from developers you trust."
+                    Severity="Warning"
+                    Title="Trust boundary" />
+
+                <Border Style="{StaticResource DashboardCardStyle}">
+                <StackPanel Spacing="8">
+                    <TextBlock Style="{StaticResource SectionTitleTextStyle}" Text="Plugin folder" />
+                    <TextBlock IsTextSelectionEnabled="True" Text="{x:Bind PluginDirectory}" TextWrapping="Wrap" />
+                    <Button
+                        AutomationProperties.Name="Open QuotaBeacon plugin folder"
+                        Click="OnOpenFolderClicked"
+                        Content="Open folder"
+                        HorizontalAlignment="Left" />
+                    <TextBlock
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="Restart QuotaBeacon after adding or removing a plugin."
+                        TextWrapping="Wrap" />
+                </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource DashboardCardStyle}">
+                <StackPanel Spacing="8">
+                    <TextBlock Style="{StaticResource SectionTitleTextStyle}" Text="Registered providers" />
+                    <TextBlock Text="{x:Bind ProviderSummary}" TextWrapping="Wrap" />
+                </StackPanel>
+                </Border>
+
+                <InfoBar
+                    IsClosable="False"
+                    IsOpen="{x:Bind HasIssues}"
+                    Message="{x:Bind IssueSummary}"
+                    Severity="Error"
+                    Title="Some plugins were not loaded" />
+
+                <Border Style="{StaticResource DashboardCardStyle}">
+                <StackPanel Spacing="8">
+                    <TextBlock Style="{StaticResource SectionTitleTextStyle}" Text="External plugins" />
+                    <TextBlock Text="{x:Bind ExternalPluginSummary}" TextWrapping="Wrap" />
+                </StackPanel>
+                </Border>
+            </StackPanel>
+        </Grid>
+    </ScrollViewer>
+    </Grid>
+</Page>

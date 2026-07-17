@@ -72,6 +72,26 @@ Claude's official status-line and `/usage` surfaces remain the user-verifiable
 reference. Authentication errors should instruct the user to run Claude's
 normal login flow; QuotaBeacon does not alter credentials.
 
+### Gemini CLI and Antigravity
+
+Launch only the installed official CLIs in a real interactive terminal, using
+Gemini's documented `/stats model` quota view and Antigravity's documented
+`/usage` view. Prefer the official install locations, then discover other
+Windows shims from expanded process, user, and machine PATH values. Wait for the
+input prompt and a fresh exact command-menu marker before Enter; continue
+watching for late trust or authentication prompts until submission. Capture
+bounded terminal output with a deadline, terminate the contained process tree
+after capture or timeout, strip terminal controls, and project the remaining or
+used percentages into the neutral quota model. Antigravity runs in a stable
+empty probe folder. If AGY requires workspace trust, the user approves that
+folder once and
+QuotaBeacon never bypasses the prompt. QuotaBeacon never reads or reuses either
+tool's OAuth or keyring material.
+
+If a fresh Gemini process exposes only per-process model statistics until it has
+made an API call, report that limitation rather than making a billable model
+request solely to unlock the quota panel.
+
 ## Neutral usage model
 
 Each plugin returns a snapshot containing:
@@ -105,7 +125,11 @@ elapsed-window percentage, pace delta, and reset countdown.
 - SessionWatcher: https://sessionwatcher.com/
 - OpenAI Codex app-server protocol: https://github.com/openai/codex/blob/main/codex-rs/app-server/README.md
 - Claude Code usage errors and official usage surfaces: https://code.claude.com/docs/en/errors
-- Win-CodexBar: https://github.com/Finesssee/Win-CodexBar
+- Gemini CLI quota and pricing: https://github.com/google-gemini/gemini-cli/blob/main/docs/resources/quota-and-pricing.md
+- Gemini CLI command reference: https://github.com/google-gemini/gemini-cli/blob/main/docs/reference/commands.md
+- Antigravity CLI: https://github.com/google-antigravity/antigravity-cli
+- Google Antigravity CLI `/usage` codelab: https://codelabs.developers.google.com/sdd-agy-cli
+- Win-CodexBar: https://github.com/nesszer/Win-CodexBar
 - Wburn: https://xakpc.dev/apps/wburn/
 - Tokus: https://www.tokus.io/
 - Usage Monitor for Claude: https://github.com/jens-duttke/usage-monitor-for-claude

@@ -36,18 +36,18 @@ jobs:
 
       - name: Restore locked dependencies and audit NuGet packages
         run: |
-          dotnet restore SessionWatcher.slnx --locked-mode -p:NuGetAudit=true -p:NuGetAuditMode=all
-          dotnet restore SessionWatcher/SessionWatcher.csproj --locked-mode --no-dependencies -r win-x64 -p:Configuration=Release -p:PublishReadyToRun=true -p:NuGetAudit=true -p:NuGetAuditMode=all
+          dotnet restore QuotaBeacon.slnx --locked-mode -p:NuGetAudit=true -p:NuGetAuditMode=all
+          dotnet restore QuotaBeacon/QuotaBeacon.csproj --locked-mode --no-dependencies -r win-x64 -p:Configuration=Release -p:PublishReadyToRun=true -p:NuGetAudit=true -p:NuGetAuditMode=all
 
       - name: Verify formatting
-        run: dotnet format SessionWatcher.slnx --no-restore --verify-no-changes
+        run: dotnet format QuotaBeacon.slnx --no-restore --verify-no-changes
 
       - name: Build release with warnings as errors
-        run: dotnet build SessionWatcher.slnx -c Release --no-restore
+        run: dotnet build QuotaBeacon.slnx -c Release --no-restore
 
       - name: Run tests and collect coverage
         run: >-
-          dotnet test SessionWatcher.Core.Tests/SessionWatcher.Core.Tests.csproj
+          dotnet test QuotaBeacon.Core.Tests/QuotaBeacon.Core.Tests.csproj
           -c Release --no-build --no-restore
           --collect:"XPlat Code Coverage"
           --settings coverlet.runsettings
@@ -72,6 +72,13 @@ jobs:
           if ($rate -lt 0.80) {
             throw "Core line coverage is $percent%; the minimum is 80%."
           }
+
+      - name: Verify self-contained x64 publish
+        run: >-
+          dotnet publish QuotaBeacon/QuotaBeacon.csproj
+          -c Release -r win-x64 --self-contained true --no-restore
+          -p:Platform=x64 -p:PublishReadyToRun=true
+          -o artifacts/publish/win-x64
 
       - name: Upload test and coverage reports
         if: ${{ always() && hashFiles('artifacts/test-results/**') != '' }}

@@ -10,11 +10,11 @@ Use Windows, the SDK pinned by `global.json`, and the Windows application
 development workload. Create a short-lived branch and run:
 
 ```powershell
-dotnet restore SessionWatcher.slnx --locked-mode -p:NuGetAudit=true -p:NuGetAuditMode=all
-dotnet format SessionWatcher.slnx --no-restore --verify-no-changes
+dotnet restore QuotaBeacon.slnx --locked-mode -p:NuGetAudit=true -p:NuGetAuditMode=all
+dotnet format QuotaBeacon.slnx --no-restore --verify-no-changes
 $env:CI = 'true'
-dotnet build SessionWatcher.slnx -c Release --no-restore
-dotnet test SessionWatcher.Core.Tests\SessionWatcher.Core.Tests.csproj `
+dotnet build QuotaBeacon.slnx -c Release --no-restore
+dotnet test QuotaBeacon.Core.Tests\QuotaBeacon.Core.Tests.csproj `
   -c Release --no-build --no-restore `
   --collect:"XPlat Code Coverage" `
   --settings coverlet.runsettings
