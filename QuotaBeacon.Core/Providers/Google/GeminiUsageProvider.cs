@@ -22,6 +22,12 @@ public sealed class GeminiUsageProvider(
         var parsed = GoogleCliQuotaParser.Parse(result.Output, observedAt, PercentMeaning.Used);
         if (parsed.Windows.Count == 0)
         {
+            var diagnostic = IsFreshReadOnlySession(result.Output)
+                ? "Gemini CLI did not expose account quota in this fresh read-only session. " +
+                  "It only exposed per-process model statistics, and QuotaBeacon will not make a model request " +
+                  "just to unlock quota data."
+                : GoogleCliQuotaParser.SummarizeDiagnostic(result.Output, DisplayName);
+
             return new ProviderSnapshot(
                 Id,
                 DisplayName,
@@ -30,8 +36,8 @@ public sealed class GeminiUsageProvider(
                 SnapshotStatus.Unavailable,
                 [],
                 parsed.Plan,
-                GoogleCliQuotaParser.SummarizeDiagnostic(result.Output, DisplayName) ??
-                "Gemini CLI did not expose quota data. Open Gemini and run /model once, then refresh.");
+                diagnostic ??
+                "Gemini CLI did not expose quota data. Open Gemini and run /stats model once, then refresh.");
         }
 
         return new ProviderSnapshot(
@@ -52,4 +58,19 @@ public sealed class GeminiUsageProvider(
         result.Status == CliUsageReadStatus.NotInstalled ? SnapshotStatus.Unavailable : SnapshotStatus.Error,
         [],
         Diagnostic: result.Diagnostic ?? "Gemini CLI usage is unavailable.");
+
+    private static bool IsFreshReadOnlySession(string output)
+    {
+        if (string.IsNullOrWhiteSpace(output))
+        {
+            return false;
+        }
+
+        var bounded = output.Length <= GoogleCliQuotaParser.MaximumInputCharacters
+            ? output
+            : output[^GoogleCliQuotaParser.MaximumInputCharacters..];
+        return bounded.Contains(
+            "No API calls have been made in this session",
+            StringComparison.OrdinalIgnoreCase);
+    }
 }

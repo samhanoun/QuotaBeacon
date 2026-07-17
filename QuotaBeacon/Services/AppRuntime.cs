@@ -41,6 +41,20 @@ public sealed class AppRuntime : IDisposable
         };
 
         var timeProvider = TimeProvider.System;
+        // Keep the permission-scoped probe under the current product name even when the app
+        // is still reading settings/history from the legacy SessionWatcher data directory.
+        var antigravityProbeDirectory = Path.Combine(
+            preferredDataDirectory,
+            "cli-probe",
+            "antigravity");
+        Directory.CreateDirectory(antigravityProbeDirectory);
+        var geminiOfficialDirectory = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "npm");
+        var antigravityOfficialDirectory = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "agy",
+            "bin");
         var builtIns = new IUsageProvider[]
         {
             new ClaudeUsageProvider(new ClaudeCredentialReader(), _claudeClient, timeProvider),
@@ -55,16 +69,42 @@ public sealed class AppRuntime : IDisposable
                 new OfficialCliUsageSource(
                     ["gemini.exe", "gemini.cmd", "gemini.bat"],
                     "QUOTABEACON_GEMINI_PATH",
-                    "/model",
-                    "Gemini CLI is not installed or is not on PATH. Install the official CLI, then sign in and refresh."),
+                    "/stats model",
+                    "Gemini CLI is not installed or could not be found. Install the official CLI, then sign in and refresh QuotaBeacon.",
+                    captureDelay: TimeSpan.FromSeconds(7),
+                    timeout: TimeSpan.FromSeconds(55),
+                    startupDelay: TimeSpan.FromSeconds(5),
+                    officialDirectories: [geminiOfficialDirectory],
+                    inputReadyMarker: "Type your message or @path/to/file",
+                    commandReadyMarker: "Show model-specific usage statistics",
+                    inputBlockedMarkers:
+                    [
+                        "Waiting for authentication",
+                        "Sign in with Google"
+                    ],
+                    commandReadyTimeout: TimeSpan.FromSeconds(20)),
                 timeProvider),
             new AntigravityUsageProvider(
                 new OfficialCliUsageSource(
                     ["agy.exe", "agy.cmd", "agy.bat"],
                     "QUOTABEACON_ANTIGRAVITY_PATH",
                     "/usage",
-                    "Antigravity CLI (agy) is not installed or is not on PATH. Install the official CLI, then sign in and refresh."),
-                timeProvider)
+                    "Antigravity CLI (agy) is not installed or could not be found. Install the official CLI, then sign in and refresh QuotaBeacon.",
+                    captureDelay: TimeSpan.FromSeconds(7),
+                    timeout: TimeSpan.FromSeconds(55),
+                    startupDelay: TimeSpan.FromSeconds(5),
+                    workingDirectory: antigravityProbeDirectory,
+                    officialDirectories: [antigravityOfficialDirectory],
+                    inputReadyMarker: "? for shortcuts",
+                    commandReadyMarker: "View model quota usage",
+                    inputBlockedMarkers:
+                    [
+                        "requires permission to read, edit, and execute files here",
+                        "Do you trust the contents of this project?"
+                    ],
+                    commandReadyTimeout: TimeSpan.FromSeconds(20)),
+                timeProvider,
+                antigravityProbeDirectory)
         };
 
         Catalog = ProviderCatalog.Load(PluginDirectory, builtIns);

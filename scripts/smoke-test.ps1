@@ -59,7 +59,7 @@ try {
     } until ($application -or (Get-Date) -gt $deadline)
 
     if (-not $application) {
-        throw "Quota Beacon did not open a top-level window within 30 seconds."
+        throw "QuotaBeacon did not open a top-level window within 30 seconds."
     }
 
     $requiredNames = @(
@@ -91,7 +91,7 @@ try {
         Where-Object { $_.InstallLocation -like "*$repository*" } |
         Select-Object -First 1
     if (-not $package) {
-        throw "The Quota Beacon package identity was not registered."
+        throw "The QuotaBeacon package identity was not registered."
     }
 
     $localStateRoot = Join-Path $env:LOCALAPPDATA (
@@ -232,7 +232,7 @@ try {
         $null = $settingsProviderItems[$providerName].GetCurrentPattern(
             [System.Windows.Automation.TogglePattern]::Pattern)
     }
-    if ("Save Quota Beacon settings" -notin $settingsNames) {
+    if ("Save QuotaBeacon settings" -notin $settingsNames) {
         throw "The Settings save action is missing from the accessibility surface."
     }
 
@@ -250,7 +250,7 @@ try {
         [System.Windows.Automation.TreeScope]::Descendants,
         [System.Windows.Automation.PropertyCondition]::new(
             [System.Windows.Automation.AutomationElement]::NameProperty,
-            "Save Quota Beacon settings"))
+            "Save QuotaBeacon settings"))
     if (-not $saveButton) {
         throw "The Settings save button could not be invoked."
     }

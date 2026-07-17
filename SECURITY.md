@@ -20,7 +20,7 @@ it within seven, and coordinate a fix and disclosure according to severity.
 
 ## Security model
 
-Quota Beacon reads local Claude Code and Codex state, invokes the official
+QuotaBeacon reads local Claude Code and Codex state, invokes the official
 Gemini and Antigravity CLIs for their usage screens, and makes read-only usage
 requests. It stores sanitized usage snapshots, never prompts or responses.
 External provider DLLs execute with the user's full application privileges and

@@ -75,7 +75,7 @@ public sealed class ClaudeUsageProviderTests
     }
 
     [Theory]
-    [InlineData(HttpStatusCode.TooManyRequests, "Claude temporarily limited usage checks. Quota Beacon will retry.")]
+    [InlineData(HttpStatusCode.TooManyRequests, "Claude temporarily limited usage checks. QuotaBeacon will retry.")]
     [InlineData(HttpStatusCode.ServiceUnavailable, "Claude usage is temporarily unavailable.")]
     public async Task Provider_reports_safe_service_errors(HttpStatusCode statusCode, string expectedDiagnostic)
     {

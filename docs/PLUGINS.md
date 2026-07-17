@@ -1,7 +1,7 @@
 # Provider plugins
 
-Quota Beacon loads trusted `.dll` files from the folder shown on its Plugins
-page at startup. Plugins run inside the Quota Beacon process with the same
+QuotaBeacon loads trusted `.dll` files from the folder shown on its Plugins
+page at startup. Plugins run inside the QuotaBeacon process with the same
 permissions as the current user. Install only assemblies you have audited or
 received from a publisher you trust.
 
@@ -27,7 +27,7 @@ public sealed class ExamplePlugin : IUsageProviderPlugin
 Each `IUsageProvider` has a stable ID, display name, and asynchronous snapshot
 method. A snapshot reports its provenance (`Live`, `LocalFallback`, or `Cache`),
 status, observed time, optional plan label, and independent quota windows.
-Quota Beacon owns reset countdowns, pace calculations, history, alerts, and
+QuotaBeacon owns reset countdowns, pace calculations, history, alerts, and
 dashboard rendering.
 
 Provider diagnostics must be safe for display and persistence boundaries:
@@ -42,7 +42,7 @@ one provider failure from all other providers.
 - Target .NET 10 and reference the same `QuotaBeacon.Core` contract version.
 - Prefer a single plugin assembly. If dependencies are required, keep their
   versions private and test loading from a clean plugin folder.
-- Copy the plugin DLL into the in-app plugin folder and restart Quota Beacon.
+- Copy the plugin DLL into the in-app plugin folder and restart QuotaBeacon.
 - Plugin and provider IDs must already be canonical lowercase ASCII identifiers:
   1-64 letters, digits, `.`, `_`, or `-`, with no surrounding whitespace.
   Invalid IDs and case-insensitive conflicts are isolated as load issues;
@@ -52,10 +52,10 @@ one provider failure from all other providers.
 
 ## Rename compatibility
 
-The Quota Beacon rename intentionally changes the managed plugin contract from
+The QuotaBeacon rename intentionally changes the managed plugin contract from
 `SessionWatcher.Core` to `QuotaBeacon.Core`. Settings and sanitized usage
 history migrate automatically, but pre-rename plugin binaries are not ABI
-compatible. Quota Beacon detects and rejects those assemblies with an
+compatible. QuotaBeacon detects and rejects those assemblies with an
 actionable load issue; rebuild and redeploy them against the current
 `QuotaBeacon.Core` project. This avoids silently executing an adapter with a
 different type identity or snapshot contract.

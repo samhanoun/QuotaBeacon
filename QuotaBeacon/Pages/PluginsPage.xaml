@@ -23,7 +23,7 @@
                 <InfoBar
                     IsClosable="False"
                     IsOpen="True"
-                    Message="External plugin DLLs execute code in Quota Beacon. Install plugins only from developers you trust."
+                    Message="External plugin DLLs execute code in QuotaBeacon. Install plugins only from developers you trust."
                     Severity="Warning"
                     Title="Trust boundary" />
 
@@ -32,13 +32,13 @@
                     <TextBlock Style="{StaticResource SectionTitleTextStyle}" Text="Plugin folder" />
                     <TextBlock IsTextSelectionEnabled="True" Text="{x:Bind PluginDirectory}" TextWrapping="Wrap" />
                     <Button
-                        AutomationProperties.Name="Open Quota Beacon plugin folder"
+                        AutomationProperties.Name="Open QuotaBeacon plugin folder"
                         Click="OnOpenFolderClicked"
                         Content="Open folder"
                         HorizontalAlignment="Left" />
                     <TextBlock
                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                        Text="Restart Quota Beacon after adding or removing a plugin."
+                        Text="Restart QuotaBeacon after adding or removing a plugin."
                         TextWrapping="Wrap" />
                 </StackPanel>
                 </Border>

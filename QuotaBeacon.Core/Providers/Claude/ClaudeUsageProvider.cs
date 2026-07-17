@@ -62,7 +62,7 @@ public sealed class ClaudeUsageProvider(
                 return ErrorSnapshot(
                     observedAt,
                     SnapshotStatus.Error,
-                    "Claude temporarily limited usage checks. Quota Beacon will retry.");
+                    "Claude temporarily limited usage checks. QuotaBeacon will retry.");
             }
 
             if (!response.IsSuccessStatusCode)

@@ -37,11 +37,13 @@ public static partial class GoogleCliQuotaParser
             .ToArray();
         var windows = new Dictionary<string, UsageWindow>(StringComparer.OrdinalIgnoreCase);
         string? plan = null;
+        string? quotaGroup = null;
 
         for (var index = 0; index < lines.Length; index++)
         {
             var line = lines[index];
             plan = ParsePlan(line) ?? plan;
+            quotaGroup = ParseQuotaGroup(line) ?? quotaGroup;
 
             if (!TryParseWindow(line, observedAt, defaultPercentMeaning, out var window) &&
                 TryComposeQuotaBlock(lines, index, out var block, out var consumedLines))
@@ -53,6 +55,17 @@ public static partial class GoogleCliQuotaParser
             if (window is null)
             {
                 continue;
+            }
+
+            if (quotaGroup is not null)
+            {
+                var groupedLabel = $"{quotaGroup} · {window.Label}";
+                window = new UsageWindow(
+                    ToKey(groupedLabel),
+                    groupedLabel,
+                    window.UsedPercent,
+                    window.Duration,
+                    window.ResetsAt);
             }
 
             windows[window.Label] = window;
@@ -84,7 +97,7 @@ public static partial class GoogleCliQuotaParser
             safe.Contains("unauthenticated", StringComparison.OrdinalIgnoreCase) ||
             safe.Contains("authenticating", StringComparison.OrdinalIgnoreCase))
         {
-            return $"Sign in with {providerName}, then refresh Quota Beacon.";
+            return $"Sign in with {providerName}, then refresh QuotaBeacon.";
         }
 
         if (safe.Contains("no quota information", StringComparison.OrdinalIgnoreCase))
@@ -214,6 +227,21 @@ public static partial class GoogleCliQuotaParser
         return null;
     }
 
+    private static string? ParseQuotaGroup(string line)
+    {
+        if (line.EndsWith("GEMINI MODELS", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Gemini Models";
+        }
+
+        if (line.EndsWith("CLAUDE AND GPT MODELS", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Claude and GPT Models";
+        }
+
+        return null;
+    }
+
     private static string? ParseName(string prefix)
     {
         var tokens = prefix.Trim(' ', '>', '•', '│', '|', '┌', '└', '├')
@@ -337,6 +365,7 @@ public static partial class GoogleCliQuotaParser
         }
 
         if (label.Contains("5h", StringComparison.OrdinalIgnoreCase) ||
+            label.Contains("five hour", StringComparison.OrdinalIgnoreCase) ||
             label.Contains("session", StringComparison.OrdinalIgnoreCase))
         {
             return TimeSpan.FromHours(5);

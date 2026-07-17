@@ -17,7 +17,7 @@ public sealed partial class MainWindow : Window, IDisposable
         InitializeComponent();
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(AppTitleBar);
-        AppWindow.SetIcon("Assets/AppIcon.ico");
+        AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "Assets", "AppIcon.ico"));
         var workArea = DisplayArea
             .GetFromWindowId(AppWindow.Id, DisplayAreaFallback.Primary)
             .WorkArea;

@@ -102,6 +102,52 @@ public sealed class GoogleCliQuotaParserTests
     }
 
     [Fact]
+    public void Parser_keeps_antigravity_model_groups_with_duplicate_window_names_separate()
+    {
+        const string output = """
+            Account: person@example.invalid GEMINI MODELS
+            Models within this group: Gemini Flash, Gemini Pro
+            Weekly Limit
+            [ ██████████ ] 99.60%
+            100% remaining · Refreshes in 166h 57m
+            Five Hour Limit
+            [ █████████░ ] 97.63%
+            98% remaining · Refreshes in 3h 57m
+
+            CLAUDE AND GPT MODELS
+            Models within this group: Claude Opus, Claude Sonnet, GPT-OSS
+            Weekly Limit
+            [ ██████████ ] 100.00%
+            Quota available
+            Five Hour Limit
+            [ ██████████ ] 100.00%
+            Quota available
+            """;
+
+        var parsed = GoogleCliQuotaParser.Parse(output, Now, PercentMeaning.Remaining);
+
+        Assert.Equal(4, parsed.Windows.Count);
+        Assert.Equal(
+            2.37,
+            parsed.Windows.Single(window =>
+                window.Label == "Gemini Models · Five Hour Limit").UsedPercent,
+            precision: 2);
+        Assert.Equal(
+            0.4,
+            parsed.Windows.Single(window =>
+                window.Label == "Gemini Models · Weekly Limit").UsedPercent,
+            precision: 2);
+        Assert.Contains(
+            parsed.Windows,
+            window => window.Label == "Claude and GPT Models · Five Hour Limit" &&
+                      window.Duration == TimeSpan.FromHours(5));
+        Assert.Contains(
+            parsed.Windows,
+            window => window.Label == "Claude and GPT Models · Weekly Limit");
+        Assert.Equal(4, parsed.Windows.Select(window => window.Key).Distinct().Count());
+    }
+
+    [Fact]
     public void Parser_removes_complete_ansi_sequences_from_colored_quota_rows()
     {
         var parsed = GoogleCliQuotaParser.Parse(
@@ -249,6 +295,84 @@ public sealed class GoogleCliUsageProviderTests
     }
 
     [Fact]
+    public async Task Gemini_provider_explains_the_fresh_read_only_session_limitation()
+    {
+        var source = new StubCliUsageSource(new CliUsageReadResult(
+            CliUsageReadStatus.Available,
+            "No API calls have been made in this session.",
+            null));
+        var provider = new GeminiUsageProvider(source, TimeProvider.System);
+
+        var snapshot = await provider.GetSnapshotAsync(CancellationToken.None);
+
+        Assert.Equal(SnapshotStatus.Unavailable, snapshot.Status);
+        Assert.Empty(snapshot.Windows);
+        Assert.Contains("fresh read-only session", snapshot.Diagnostic, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("will not make a model request", snapshot.Diagnostic, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("run /stats model once", snapshot.Diagnostic, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task Gemini_provider_points_empty_quota_output_to_stats_model()
+    {
+        var source = new StubCliUsageSource(new CliUsageReadResult(
+            CliUsageReadStatus.Available,
+            string.Empty,
+            null));
+        var provider = new GeminiUsageProvider(source, TimeProvider.System);
+
+        var snapshot = await provider.GetSnapshotAsync(CancellationToken.None);
+
+        Assert.Equal(SnapshotStatus.Unavailable, snapshot.Status);
+        Assert.Contains("/stats model", snapshot.Diagnostic, StringComparison.Ordinal);
+        Assert.DoesNotContain("/model", snapshot.Diagnostic, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Antigravity_provider_returns_bounded_one_time_workspace_trust_guidance()
+    {
+        var probeDirectory = Path.Combine(
+            Path.GetTempPath(),
+            "QuotaBeacon",
+            "cli-probe",
+            "antigravity");
+        var source = new StubCliUsageSource(new CliUsageReadResult(
+            CliUsageReadStatus.Available,
+            new string('x', GoogleCliQuotaParser.MaximumInputCharacters) +
+            "\u001b[33mThis workspace requires permission to read, edit, and execute files here. Yes / No\u001b[0m SENSITIVE_RAW_OUTPUT",
+            null));
+        var provider = new AntigravityUsageProvider(source, TimeProvider.System, probeDirectory);
+
+        var snapshot = await provider.GetSnapshotAsync(CancellationToken.None);
+
+        Assert.Equal(SnapshotStatus.Unavailable, snapshot.Status);
+        Assert.Empty(snapshot.Windows);
+        var diagnostic = Assert.IsType<string>(snapshot.Diagnostic);
+        Assert.Contains("one-time", diagnostic, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("run agy once", diagnostic, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("QuotaBeacon", diagnostic, StringComparison.Ordinal);
+        Assert.Contains(probeDirectory, diagnostic, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("SENSITIVE_RAW_OUTPUT", diagnostic, StringComparison.Ordinal);
+        Assert.DoesNotContain('\u001b', diagnostic);
+        Assert.InRange(diagnostic.Length, 1, 1024);
+    }
+
+    [Fact]
+    public async Task Gemini_provider_guides_the_user_to_the_current_stats_command_when_the_cli_returns_no_parseable_quota()
+    {
+        var source = new StubCliUsageSource(new CliUsageReadResult(
+            CliUsageReadStatus.Available,
+            "Welcome back to Gemini CLI.",
+            null));
+        var provider = new GeminiUsageProvider(source, TimeProvider.System);
+
+        var snapshot = await provider.GetSnapshotAsync(CancellationToken.None);
+
+        Assert.Contains("/stats model", snapshot.Diagnostic, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("/model once", snapshot.Diagnostic, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task Antigravity_provider_projects_remaining_quota_as_used_percentage()
     {
         var now = new DateTimeOffset(2026, 7, 17, 10, 0, 0, TimeSpan.Zero);
@@ -263,6 +387,31 @@ public sealed class GoogleCliUsageProviderTests
         Assert.Equal("antigravity", snapshot.ProviderId);
         Assert.Equal(SnapshotStatus.Available, snapshot.Status);
         Assert.Equal(25, Assert.Single(snapshot.Windows).UsedPercent);
+    }
+
+    [Fact]
+    public async Task Antigravity_provider_surfaces_a_one_time_workspace_trust_diagnostic()
+    {
+        var source = new StubCliUsageSource(new CliUsageReadResult(
+            CliUsageReadStatus.Available,
+            """
+            Accessing workspace:
+
+            C:\Workspace
+
+            Do you trust the contents of this project?
+
+            Antigravity CLI requires permission to read, edit, and execute files here.
+            > Yes, I trust this folder
+              No, exit
+            """,
+            null));
+        var provider = new AntigravityUsageProvider(source, TimeProvider.System);
+
+        var snapshot = await provider.GetSnapshotAsync(CancellationToken.None);
+
+        Assert.Equal(SnapshotStatus.Unavailable, snapshot.Status);
+        Assert.Contains("trust approval", snapshot.Diagnostic, StringComparison.OrdinalIgnoreCase);
     }
 
     private sealed class StubCliUsageSource(CliUsageReadResult result) : ICliUsageSource

@@ -1,6 +1,6 @@
-# Contributing to Quota Beacon
+# Contributing to QuotaBeacon
 
-Quota Beacon accepts focused changes that preserve its core guarantees: usage
+QuotaBeacon accepts focused changes that preserve its core guarantees: usage
 data stays local, provider failures remain isolated, and quota data is never
 confused with local estimates.
 

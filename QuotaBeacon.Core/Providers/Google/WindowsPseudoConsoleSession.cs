@@ -15,8 +15,11 @@ internal sealed class WindowsPseudoConsoleSession : IDisposable
     private const uint ExtendedStartupInfoPresent = 0x00080000;
     private const uint Infinite = 0xffffffff;
     private const uint JobObjectLimitKillOnJobClose = 0x00002000;
+    private const int MaximumInputBytes = 4 * 1024;
     private const int StartfUseStdHandles = 0x00000100;
     private const nuint ProcThreadAttributePseudoConsole = 0x00020016;
+    private static readonly TimeSpan KeyStrokeDelay = TimeSpan.FromMilliseconds(12);
+    private static readonly TimeSpan EnterKeyDelay = TimeSpan.FromMilliseconds(75);
     private readonly SafePseudoConsoleHandle _pseudoConsole;
     private readonly SafeJobHandle _job;
     private readonly SafeKernelHandle _process;
@@ -40,8 +43,9 @@ internal sealed class WindowsPseudoConsoleSession : IDisposable
 
     public Stream Output => _output;
 
-    public static WindowsPseudoConsoleSession Start(string executable)
+    public static WindowsPseudoConsoleSession Start(string executable, string? workingDirectory = null)
     {
+        var startDirectory = ResolveWorkingDirectory(workingDirectory);
         SafeFileHandle? inputRead = null;
         SafeFileHandle? inputWrite = null;
         SafeFileHandle? outputRead = null;
@@ -146,7 +150,7 @@ internal sealed class WindowsPseudoConsoleSession : IDisposable
                     false,
                     CreateSuspended | CreateUnicodeEnvironment | ExtendedStartupInfoPresent,
                     0,
-                    Path.GetTempPath(),
+                    startDirectory,
                     ref startupInfo,
                     out var processInformation))
             {
@@ -217,13 +221,92 @@ internal sealed class WindowsPseudoConsoleSession : IDisposable
 
     public async ValueTask WriteLineAsync(string value, CancellationToken cancellationToken)
     {
-        var bytes = Encoding.UTF8.GetBytes(string.Concat(value, "\r"));
+        await SubmitLineAsync(
+            value,
+            WriteAsync,
+            KeyStrokeDelay,
+            EnterKeyDelay,
+            cancellationToken);
+    }
+
+    public async ValueTask TypeLineAsync(string value, CancellationToken cancellationToken)
+    {
+        await TypeLineAsync(
+            value,
+            WriteAsync,
+            KeyStrokeDelay,
+            cancellationToken);
+    }
+
+    public async ValueTask SendEnterAsync(CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        await WriteAsync(new byte[] { (byte)'\r' }, cancellationToken);
+    }
+
+    internal static async ValueTask SubmitLineAsync(
+        string value,
+        Func<ReadOnlyMemory<byte>, CancellationToken, ValueTask> writeAsync,
+        TimeSpan keyStrokeDelay,
+        TimeSpan enterDelay,
+        CancellationToken cancellationToken)
+    {
+        if (enterDelay <= TimeSpan.Zero || enterDelay > TimeSpan.FromSeconds(1))
+        {
+            throw new ArgumentOutOfRangeException(nameof(enterDelay));
+        }
+
+        await TypeLineAsync(value, writeAsync, keyStrokeDelay, cancellationToken);
+        await Task.Delay(enterDelay, cancellationToken);
+        await writeAsync(new byte[] { (byte)'\r' }, cancellationToken);
+    }
+
+    internal static async ValueTask TypeLineAsync(
+        string value,
+        Func<ReadOnlyMemory<byte>, CancellationToken, ValueTask> writeAsync,
+        TimeSpan keyStrokeDelay,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(value);
+        ArgumentNullException.ThrowIfNull(writeAsync);
+        if (value.Length == 0 || value.Any(character => character is < ' ' or > '~'))
+        {
+            throw new ArgumentException("The usage command must contain exactly one printable ASCII line.", nameof(value));
+        }
+
+        if (Encoding.UTF8.GetByteCount(value) > MaximumInputBytes)
+        {
+            throw new ArgumentOutOfRangeException(nameof(value), "The usage command is too long.");
+        }
+
+        if (keyStrokeDelay <= TimeSpan.Zero || keyStrokeDelay > TimeSpan.FromMilliseconds(250))
+        {
+            throw new ArgumentOutOfRangeException(nameof(keyStrokeDelay));
+        }
+
+        // Gemini and Antigravity distinguish typed terminal input from a pasted prompt. Sending
+        // the complete slash command in one native write can therefore fall through to the model.
+        // Emit only the configured command as bounded printable keystrokes. Enter is a separate,
+        // explicit operation so the caller can wait for the CLI's command menu first.
+        for (var index = 0; index < value.Length; index++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            await writeAsync(new byte[] { (byte)value[index] }, cancellationToken);
+            if (index + 1 < value.Length)
+            {
+                await Task.Delay(keyStrokeDelay, cancellationToken);
+            }
+        }
+    }
+
+    private async ValueTask WriteAsync(ReadOnlyMemory<byte> bytes, CancellationToken cancellationToken)
+    {
         await Task.Run(
             () =>
             {
                 if (!NativeMethods.WriteFile(
                         _input.SafeFileHandle,
-                        bytes,
+                        bytes.ToArray(),
                         (uint)bytes.Length,
                         out var written,
                         0) || written != bytes.Length)
@@ -265,6 +348,26 @@ internal sealed class WindowsPseudoConsoleSession : IDisposable
         if (!NativeMethods.CreatePipe(out read, out write, 0, 0))
         {
             throw LastWin32Exception("Windows could not create a pseudo-terminal channel.");
+        }
+    }
+
+    private static string ResolveWorkingDirectory(string? workingDirectory)
+    {
+        var directory = string.IsNullOrWhiteSpace(workingDirectory)
+            ? Path.GetTempPath()
+            : workingDirectory;
+        if (!Path.IsPathFullyQualified(directory) || !Directory.Exists(directory))
+        {
+            throw new InvalidOperationException("The official CLI working directory is unavailable.");
+        }
+
+        try
+        {
+            return Path.GetFullPath(directory);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException)
+        {
+            throw new InvalidOperationException("The official CLI working directory is unavailable.", exception);
         }
     }
 

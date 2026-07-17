@@ -16,7 +16,7 @@
                     <TextBlock Style="{StaticResource PageTitleTextStyle}" Text="Settings" />
                     <TextBlock
                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                        Text="Quota Beacon stores these settings only in your local app-data folder."
+                        Text="QuotaBeacon stores these settings only in your local app-data folder."
                         TextWrapping="Wrap" />
                 </StackPanel>
 
@@ -57,11 +57,11 @@
                         <TextBlock FontWeight="SemiBold" Text="Start with Windows" />
                         <TextBlock
                             Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                            Text="Adds or removes Quota Beacon from your current user's Startup list."
+                            Text="Adds or removes QuotaBeacon from your current user's Startup list."
                             TextWrapping="Wrap" />
                         <ToggleSwitch
                             x:Name="StartWithWindowsToggle"
-                            AutomationProperties.Name="Start Quota Beacon with Windows" />
+                            AutomationProperties.Name="Start QuotaBeacon with Windows" />
                     </StackPanel>
 
                     <StackPanel Spacing="8">
@@ -72,14 +72,14 @@
                             TextWrapping="Wrap" />
                         <ToggleSwitch
                             x:Name="MinimizeToTrayToggle"
-                            AutomationProperties.Name="Keep Quota Beacon running in the tray" />
+                            AutomationProperties.Name="Keep QuotaBeacon running in the tray" />
                     </StackPanel>
                 </StackPanel>
                 </Border>
 
                 <InfoBar x:Name="SaveStatus" IsClosable="True" IsOpen="False" />
                 <Button
-                    AutomationProperties.Name="Save Quota Beacon settings"
+                    AutomationProperties.Name="Save QuotaBeacon settings"
                     Click="OnSaveClicked"
                     Content="Save settings"
                     HorizontalAlignment="Left" />

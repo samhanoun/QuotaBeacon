@@ -1,9 +1,9 @@
 {
   "profiles": {
-    "Quota Beacon (Package)": {
+    "QuotaBeacon (Package)": {
       "commandName": "MsixPackage"
     },
-    "Quota Beacon (Unpackaged)": {
+    "QuotaBeacon (Unpackaged)": {
       "commandName": "Project"
     }
   }

@@ -45,12 +45,16 @@ public sealed partial class OverviewPage : Page
                 IsChecked = App.Current.Runtime.CurrentSettings.IsProviderEnabled(provider.Id),
                 Tag = provider.Id
             };
-            item.Click += OnProviderToggleClicked;
+            _ = item.RegisterPropertyChangedCallback(
+                ToggleMenuFlyoutItem.IsCheckedProperty,
+                OnProviderToggleChanged);
             ProviderMenu.Items.Add(item);
         }
     }
 
-    private async void OnProviderToggleClicked(object sender, RoutedEventArgs args)
+    private async void OnProviderToggleChanged(
+        DependencyObject sender,
+        DependencyProperty _)
     {
         if (sender is not ToggleMenuFlyoutItem { Tag: string providerId } item)
         {
@@ -65,7 +69,10 @@ public sealed partial class OverviewPage : Page
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
+            // Prevent the rollback itself from re-entering persistence.
+            item.Tag = null;
             item.IsChecked = !item.IsChecked;
+            item.Tag = providerId;
         }
     }
 

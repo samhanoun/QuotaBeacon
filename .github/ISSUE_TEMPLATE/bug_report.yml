@@ -1,5 +1,5 @@
 name: Bug report
-description: Report reproducible Quota Beacon behavior.
+description: Report reproducible QuotaBeacon behavior.
 title: '[Bug]: '
 labels: [bug]
 body:
@@ -22,7 +22,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: Quota Beacon version or commit
+      label: QuotaBeacon version or commit
     validations:
       required: true
   - type: input

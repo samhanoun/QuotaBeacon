@@ -1,8 +1,8 @@
-# Security audit — 17 July 2026
+# Security audit — 17–18 July 2026
 
 ## Result
 
-The Quota Beacon working-tree diff review covered all 86 inventoried worklist
+The QuotaBeacon working-tree diff review covered all 86 inventoried worklist
 entries with no deferred files. Three candidates were reproduced with bounded
 runtime harnesses, then evaluated against the repository threat model and the
 mandatory attack-path policy. None established a realistic lower-privileged
@@ -23,14 +23,30 @@ issue in the new Google CLI integration. Redirected standard streams put Gemini
 into headless mode, where the original `/stats model` input could fall through
 to a real model request instead of opening an interactive quota view. Repeated
 background polling could therefore consume quota without returning quota data.
-The integration now uses Windows ConPTY with Gemini's `/model` command and
-Antigravity's `/usage` command. It starts the CLI suspended, assigns a
-kill-on-close job before resume, uses a mutable `CreateProcessW` buffer, limits
-native DLL resolution to System32, retains bounded output while continuing to
-drain the terminal, and terminates the contained process tree without sending
-`/quit`, `/exit`, Escape, or any other prompt text. Functional tests prove real
-TTY attachment, `.cmd` paths with spaces, exact command capture, bounded noisy
+The integration now uses Windows ConPTY with Gemini's documented `/stats model`
+command and Antigravity's documented `/usage` command. It first waits for the
+CLI's input prompt, types bounded printable ASCII one keystroke at a time, then
+arms a fresh command-menu marker immediately before the final keystroke. Enter
+is sent only after that fresh autocomplete marker remains free of trust or
+authentication prompts through a settling interval. Stale menu text and a late
+modal prompt therefore cannot authorize Enter. This sequencing is necessary
+because modern TUIs can treat a whole-line write as a pasted model prompt. The
+launcher starts the CLI suspended,
+assigns a kill-on-close job before resume, uses a mutable `CreateProcessW`
+buffer, limits native DLL resolution to System32, retains bounded output while
+continuing to drain the terminal, and terminates the contained process tree
+without sending `/quit`, `/exit`, Escape, or any other prompt text. Functional
+tests prove real TTY attachment, `.cmd` paths with spaces, typed command
+submission, stale-marker rejection, late trust-prompt rejection, bounded noisy
 output, timeouts, and descendant cleanup.
+
+Executable discovery keeps strict filename and extension checks, prefers
+provider-owned official install directories, then reads the process, Windows
+user, and Windows machine PATH values with environment-variable expansion.
+Antigravity is launched from an empty stable
+QuotaBeacon probe directory. If AGY requests workspace trust, the provider
+returns a bounded actionable diagnostic; it never auto-confirms trust or uses
+the dangerous permission-bypass flag.
 
 The same final review replaced refresh queuing with a dirty-flag coalescer.
 Rapid timer/settings/provider events now produce at most one follow-up poll,
@@ -57,16 +73,18 @@ isolates provider-internal cancellation; and evicts stale alert state.
 
 - Locked NuGet restore with audit mode `all`: passed.
 - Release build with analyzers and warnings as errors: passed with zero warnings.
-- Automated tests: 97 passed, 0 failed.
-- Core line coverage: 83.78% (minimum 80%).
+- Automated tests: 112 passed, 0 failed.
+- Core line coverage: 84.52% (minimum 80%).
 - Formatting verification: passed.
 - Self-contained x64 publish: passed.
 - Local checksum-verified Gitleaks scans of Git history and the staged patch:
   passed.
 - Packaged WinUI smoke test: passed, including all four provider controls on
   the overview and in Settings plus sanitized history persistence.
-- Live Gemini ConPTY probe: safely recognized this machine's migration-to-
-  Antigravity state without exposing captured terminal output.
+- Live Gemini ConPTY probe: safely executed `/stats model` without a model
+  request and confirmed the current CLI's fresh-session quota limitation.
+- Live Antigravity ConPTY probe: parsed four grouped weekly/five-hour quota
+  windows from `/usage` without exposing captured account data.
 
 GitHub CI repeats the locked restore and NuGet audit, formatting, analyzer-clean
 Release build, full tests, coverage gate, and self-contained x64 publish. The

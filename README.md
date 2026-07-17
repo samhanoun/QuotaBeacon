@@ -1,6 +1,10 @@
-# Quota Beacon for Windows
+# QuotaBeacon for Windows
 
-Quota Beacon is a native Windows usage monitor for AI coding tools. Its built-in
+<p align="center">
+  <img src="QuotaBeacon/Assets/QuotaBeaconLogo.png" alt="QuotaBeacon logo" width="120" />
+</p>
+
+QuotaBeacon is a native Windows usage monitor for AI coding tools. Its built-in
 providers are Claude Code, OpenAI Codex, Gemini CLI, and Google Antigravity,
 with a plugin contract for adding more providers without changing the app shell.
 
@@ -43,16 +47,33 @@ The first working native prototype includes:
   refresh/startup/minimize-to-tray behavior;
 - trusted external provider DLL discovery with duplicate/error isolation.
 
-The July 2026 Quota Beacon change-set security review closed all 86 worklist
+The July 2026 QuotaBeacon change-set security review closed all 86 worklist
 rows with no deferred work and no reportable vulnerabilities. Three validated
 defense-in-depth issues were still remediated: provider-ID domain mismatches,
 relative-reset arithmetic overflow, and Unicode format controls in quota
 labels. See [SECURITY_AUDIT.md](SECURITY_AUDIT.md) and [SECURITY.md](SECURITY.md).
 
 The final release review also replaced redirected Google CLI input with a real
-contained Windows terminal. Gemini receives only `/model`, Antigravity receives
-only `/usage`, terminal output stays bounded and continuously drained, and
-shutdown never sends prompt text that could be interpreted as an AI request.
+contained Windows terminal. Gemini receives only `/stats model`, Antigravity
+receives only `/usage`, terminal output stays bounded and continuously drained,
+and shutdown never sends prompt text that could be interpreted as an AI
+request. CLI discovery checks the current process plus the Windows user and
+machine PATH values after expanding registry-style environment variables, but
+prefers the official Windows install locations. A GUI process started before a
+CLI installation can therefore discover it without allowing a stale PATH entry
+to shadow the official binary.
+
+Antigravity runs quota checks from an empty, stable QuotaBeacon probe folder.
+AGY may ask for one-time workspace trust there; QuotaBeacon never accepts or
+bypasses that prompt automatically and instead shows the exact manual setup
+step before the next refresh.
+
+Live validation on this machine confirms that Antigravity CLI 1.1.3 exposes all
+four grouped `/usage` windows: Gemini and Claude/GPT, each with weekly and
+five-hour limits. Gemini CLI 0.51.0 accepts the safe `/stats model` command, but
+its fresh process reports only that no API calls have occurred and withholds
+account quota. QuotaBeacon shows that upstream limitation explicitly and will
+not spend a model request merely to unlock quota data.
 
 On this development machine, Codex currently uses the clearly labeled local
 fallback because the installed CLI cannot parse a newly returned plan name.
@@ -85,7 +106,7 @@ To create a self-contained x64 file-system publish:
 dotnet publish QuotaBeacon\QuotaBeacon.csproj -c Release -r win-x64 --self-contained true -p:Platform=x64
 ```
 
-Run `scripts\smoke-test.ps1` with no Quota Beacon instance open to verify a
+Run `scripts\smoke-test.ps1` with no QuotaBeacon instance open to verify a
 real packaged launch, its accessibility surface, and sanitized persistence.
 
 ## Security and development workflow
@@ -95,12 +116,12 @@ complete test suite with an 80% line-coverage gate, formatting checks, NuGet
 vulnerability audits, CodeQL, dependency review, and secret scanning. GitHub
 Actions and reusable supply-chain steps are pinned to immutable commit SHAs and
 updated by Dependabot. The interactive packaged-app smoke test remains a local
-release check because hosted CI does not provide Quota Beacon with a supported
+release check because hosted CI does not provide QuotaBeacon with a supported
 interactive desktop session.
 
 ## Repository layout
 
-- `QuotaBeacon` — Quota Beacon's WinUI 3 shell, tray integration, and composition root.
+- `QuotaBeacon` — QuotaBeacon's WinUI 3 shell, tray integration, and composition root.
 - `QuotaBeacon.Core` — provider contracts, Claude/Codex adapters, history,
   alerts, plugins, and presentation projection.
 - `QuotaBeacon.Core.Tests` — isolated contract and safety tests.
