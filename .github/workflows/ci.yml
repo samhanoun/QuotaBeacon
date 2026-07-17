@@ -37,7 +37,7 @@ jobs:
       - name: Restore locked dependencies and audit NuGet packages
         run: |
           dotnet restore SessionWatcher.slnx --locked-mode -p:NuGetAudit=true -p:NuGetAuditMode=all
-          dotnet restore SessionWatcher/SessionWatcher.csproj --locked-mode --no-dependencies -r win-x64 -p:NuGetAudit=true -p:NuGetAuditMode=all
+          dotnet restore SessionWatcher/SessionWatcher.csproj --locked-mode --no-dependencies -r win-x64 -p:Configuration=Release -p:PublishReadyToRun=true -p:NuGetAudit=true -p:NuGetAuditMode=all
 
       - name: Verify formatting
         run: dotnet format SessionWatcher.slnx --no-restore --verify-no-changes
