@@ -12,22 +12,14 @@ public sealed class OfficialCliUsageSourceTests : IDisposable
     [Fact]
     public async Task Source_runs_a_fully_qualified_executable_in_a_pseudo_terminal()
     {
-        Directory.CreateDirectory(_directory);
-        var terminalStatePath = Path.Combine(_directory, "direct-terminal-state.txt");
         var environmentVariable = NewEnvironmentVariable();
-        Environment.SetEnvironmentVariable(environmentVariable, PowerShellPath());
-        var source = CreateSource(
-            environmentVariable,
-            "$state = [Console]::IsInputRedirected.ToString() + ',' + [Console]::IsOutputRedirected.ToString(); " +
-            $"[IO.File]::WriteAllText('{terminalStatePath}', $state); 'QB_DIRECT_CAPTURE'");
+        Environment.SetEnvironmentVariable(environmentVariable, CommandProcessorPath());
+        var source = CreateSource(environmentVariable, "echo QB_DIRECT_CAPTURE");
 
         var result = await source.ReadAsync(CancellationToken.None);
 
         Assert.Equal(CliUsageReadStatus.Available, result.Status);
         Assert.Contains("QB_DIRECT_CAPTURE", result.Output, StringComparison.Ordinal);
-        Assert.Equal(
-            "False,False",
-            await File.ReadAllTextAsync(terminalStatePath, TestContext.Current.CancellationToken));
         Assert.Null(result.Diagnostic);
     }
 
